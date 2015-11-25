@@ -1,4 +1,4 @@
-/* M2 x 4 Memory Array
+/* This M2 class will be used to construct the M2 x 4 Memory Array
 	Should be a class that has rows of memory as members and read and write as 
 	methods. This memory array consists of 4 individual M2 memory chips. Each
 	chip is 2bytes wide by 256 rows. Put together, there should be 4 memory
