@@ -16,6 +16,7 @@
 		-Memory is aligned in increments of 16 rows, i.e. 0x0, 0x15, 0x31 etc.
 		-Memory supports noncontiguous memory access but must be aligned.
 */
+#include <cstdio>
 
 using namespace std;
 
@@ -41,3 +42,19 @@ int M2::read(int row)
 	return mem_matrix[row];
 }
 
+int main()
+{
+
+	M2 myM2;
+
+	int read;
+
+	myM2.write(0,0x12);
+	read = myM2.read(0);
+	printf("TEST: %x, should be 0x12\n", read);
+
+
+	return 0;
+
+
+}
