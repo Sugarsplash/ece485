@@ -13,7 +13,7 @@
 
 
 	Other considerations:
-		-Memory is aligned in increments of 16 rows, i.e. 0x0, 0x15, 0x31 etc.
+		-Memory is aligned in increments of 16 rows, i.e. 0x0, 0x16, 0x32 etc.
 		-Memory supports noncontiguous memory access but must be aligned.
 */
 
@@ -46,7 +46,7 @@ private:
 
 
 	Other considerations:
-		-Memory is aligned in increments of 8 rows, i.e. 0x0, 0x7, 0x15 etc.
+		-Memory is aligned in increments of 8 rows, i.e. 0x0, 0x8 0x16 etc.
 		-Memory supports noncontiguous memory access but must be aligned.
 */
 
