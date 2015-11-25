@@ -10,5 +10,34 @@
 			128 rows for 1Kbyte packet
 
 	Total memory array capacity is 2Kb.
+
+
+	Other considerations:
+		-Memory is aligned in increments of 16 rows, i.e. 0x0, 0x15, 0x31 etc.
+		-Memory supports noncontiguous memory access but must be aligned.
 */
+
+using namespace std;
+
+class M2
+{
+public:
+	int memlock;
+
+	void write(int row, int data);
+	int read(int row);
+
+private:
+	int mem_matrix[256];
+};
+
+void M2::write(int row, int data)
+{
+	mem_matrix[row] = data;
+}
+
+int M2::read(int row)
+{
+	return mem_matrix[row];
+}
 
