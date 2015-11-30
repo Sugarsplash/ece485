@@ -4,6 +4,8 @@
    which device is making the transaction, whether a read or write needs to be
    performed, the size of the transaction, and the tag associated with the
    transaction.
+
+Run this code from within /ece485/src
 */
 
 #include <iostream>
@@ -57,7 +59,7 @@ int csv_1() {
     string Line;			//Holds a line from the csv file
     ifstream csv_file;			//Create the file stream
 
-    csv_file.open("~/ece485/src/csv_files/first_scenario.csv");
+    csv_file.open("./csv_files/first_scenario.csv");
 
     if (csv_file.is_open()) {
 	for (int i = 0; i < CSV1; i++) {
@@ -77,7 +79,7 @@ int csv_2() {
     string Line;                        //Holds a line from the csv file
     ifstream csv_file;                  //Create the file stream
 
-    csv_file.open("~/ece485/src/csv_files/second_scenario.csv");
+    csv_file.open("./csv_files/second_scenario.csv");
 
     if (csv_file.is_open()) {
 	for (int i = 0; i < CSV2; i++) {
@@ -97,7 +99,7 @@ int csv_3() {
     string Line;                        //Holds a line from the csv file
     ifstream csv_file;                  //Create the file stream
 
-    csv_file.open("~/ece485/src/csv_files/third_scenario.csv");
+    csv_file.open("./csv_files/third_scenario.csv");
 
     if (csv_file.is_open()) {
 	for (int i = 0; i < CSV3; i++) {
@@ -136,6 +138,15 @@ int parse_line(string Line, Info * Data, int Line_Number) {
     Data[Line_Number].ts = atoi(TS.c_str());
     Data[Line_Number].tr_data_tag = atoi(Tag.c_str());
 
+/*Debugging
+
+    printf("%d, %d, %d, %d, %d.\n", Data[Line_Number].time, 
+                                    Data[Line_Number].device,
+                                    Data[Line_Number].operation,                                        
+                                    Data[Line_Number].ts, 
+                                    Data[Line_Number].tr_data_tag);
+
+*/
     return 0;
 
 }
