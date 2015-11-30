@@ -38,9 +38,8 @@ void M2word_write(int address, int data)
 }
 
 //Function to write 128byte word to M2 memory
-int * M2word_read(int address)
+void M2word_read(int address, int readData[64])
 {
-	int data[64];
 	int bank, row;
 	int counter = 0;
 
@@ -48,12 +47,10 @@ int * M2word_read(int address)
 	{
 		for(bank = 0; bank < 4; bank++)
 		{
-			data[counter] = M2array[0].read(row);
+			readData[counter] = M2array[0].read(row);
 			counter++;
 		}
 	}
-
-	return data;
 }
 
 //Function to write 128byte word to M3 memory
@@ -71,9 +68,8 @@ void M3word_write(int address, int data)
 }
 
 //Function to write 128byte word to M3 memory
-int * M3word_read(int address)
+void M3word_read(int address, int readData[64])
 {
-	int data[64];
 	int bank, row;
 	int counter = 0;
 
@@ -81,10 +77,40 @@ int * M3word_read(int address)
 	{
 		for(bank = 0; bank < 8; bank++)
 		{
-			data[counter] = M3array[0].read(row);
+			readData[counter] = M3array[0].read(row);
 			counter++;
 		}
 	}
+}
 
-	return data;
+
+int main()
+{
+	int address = 0;
+	int data = 0xDEAD;
+	int readData[64];
+
+	M2word_write(address, data);
+	M3word_write(address, data);
+
+	M2word_read(address, readData);
+
+	for(int i=0; i < 64; i++)
+	{
+		printf("Data at %d: %x\n", i, readData[i]);
+
+	}
+
+	M3word_read(address, readData);
+
+	for(int i=0; i < 64; i++)
+	{
+		printf("Data at %d: %x\n", i, readData[i]);
+
+	}
+
+
+
+
+	return 0;
 }
