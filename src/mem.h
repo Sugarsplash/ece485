@@ -8,10 +8,10 @@ public:
     M1(void);
 
 	void write(int row, int data);
-	int read(int row);
+	void read(int row, int readData[16]);
 
 private:
-	int mem_matrix[128];
+	int mem_matrix[128][16];
 };
 
 

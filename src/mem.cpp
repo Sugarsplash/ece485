@@ -15,9 +15,9 @@ void M1::write(int row, int data)
 	mem_matrix[row] = data;
 }
 
-int M1::read(int row)
+void M1::read(int row, int readData[16])
 {
-	return mem_matrix[row];
+	mem_matrix[row];
 }
 
 M2::M2(void)

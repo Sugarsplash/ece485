@@ -10,7 +10,7 @@
 #include <cstdio>
 
 //These are the banks of memory 
-M1 M1array[2];
+M1 MemController;
 M2 M2array[4];
 M3 M3array[8];
 
@@ -20,8 +20,6 @@ M3 M3array[8];
 int M2control_mem[16];
 int M3control_mem[64];
 
-//Keep track of valid lines in M2controll_mem and M3controll_mem
-int M1valid_array[80];
 
 //Data Types
 #define WORD 0
@@ -33,26 +31,17 @@ int M1valid_array[80];
 
 //Prototypes
 int findFreeLine();
-void M1generate(int line, int size, int tag);
-void M1line_read(int address, int readData[32]);
+void M1generate(int line, int tag);
 
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
 void M3word_write(int address, int data);
 void M3word_read(int address, int readData[64]);
 
-void M1generate(int line, int size, int tag)
+void M1generate(int line, int tag)
 {
-	switch(size)
-	{
-		case 128:
-			//M3control_mem[line] =  
-			break;
-		case 512:
-			break;
-		case 1024:
-			break;
-	}
+
+	
 }
 
 int main()
@@ -227,14 +216,4 @@ void M3word_read(int address, int readData[64])
 }
 
 
-void M1line_read(int address, int readData[32])
-{
-	int bank, row;
-	int counter = 0;
 
-	for(bank = 0; bank < 2; bank++)
-	{
-		readData[counter] = M2array[bank].read(row);
-		counter++;
-	}
-}
