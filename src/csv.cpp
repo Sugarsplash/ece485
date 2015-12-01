@@ -83,6 +83,20 @@ int parse_line(string Line, Info * Data, int Line_Number) {
     Data[Line_Number].ts = atoi(TS.c_str());
     Data[Line_Number].tr_data_tag = atoi(Tag.c_str());
 
+    if(Data[Line_Number].ts == 128)
+    {
+        Data[Line_Number].ts = 0;
+    }
+    else if(Data[Line_Number].ts == 512)
+    {
+        Data[Line_Number].ts = 1;
+    }
+    else if(Data[Line_Number].ts == 1024)
+    {
+        Data[Line_Number].ts = 2;
+    }
+    
+
 /*Debugging
 
     printf("%d, %d, %d, %d, %d.\n", Data[Line_Number].time, 
