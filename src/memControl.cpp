@@ -34,20 +34,8 @@ int M1valid_array[80];
 //Prototypes
 int findFreeLine();
 void M1generate(int line, int size, int tag);
-void M1line_read(int address, int readData[32])
-{
-	int bank, row;
-	int counter = 0;
+void M1line_read(int address, int readData[32]);
 
-	for(row = address; row < address + 16; row++)
-	{
-		for(bank = 0; bank < 2; bank++)
-		{
-			readData[counter] = M2array[0].read(row);
-			counter++;
-		}
-	}
-}
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
 void M3word_write(int address, int data);
@@ -58,7 +46,7 @@ void M1generate(int line, int size, int tag)
 	switch(size)
 	{
 		case 128:
-			M3control_mem[line] =  
+			//M3control_mem[line] =  
 			break;
 		case 512:
 			break;
@@ -90,7 +78,7 @@ int main()
 			case WORD:
 				//findFreeLine needs to find lowest zero in M3valid_array.
 				int writeLine = findFreeLine();
-				if(writeLine != 0xFF)
+		/*		if(writeLine != 0xFF)
 				{
 					//M1generate needs to create the three byte line to store in M1.
 					M1generate(writeLine, ts, tag);
@@ -123,6 +111,7 @@ int main()
 				}
 				M1generate8(writeLong);
 				break;
+				*/
 		}
 	}
 
@@ -162,10 +151,13 @@ int main()
 //Function to determine where to write to memory
 int findFreeLine()
 {
+	int readline[32];
 
-	for(int i=0; i < 64; i++)
+	M1line_read(50, readline);
+
+	for(int i=0; i < 32; i++)
 	{
-		if(M1valid_array[i] == 0)
+		if(readline[i] == 0)
 		{
 			return i;
 		}
@@ -231,5 +223,18 @@ void M3word_read(int address, int readData[64])
 			readData[counter] = M3array[bank].read(row);
 			counter++;
 		}
+	}
+}
+
+
+void M1line_read(int address, int readData[32])
+{
+	int bank, row;
+	int counter = 0;
+
+	for(bank = 0; bank < 2; bank++)
+	{
+		readData[counter] = M2array[bank].read(row);
+		counter++;
 	}
 }
