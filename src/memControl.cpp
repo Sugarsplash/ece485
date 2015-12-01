@@ -40,7 +40,17 @@ void M3word_read(int address, int readData[64]);
 
 void M1generate(int line, int tag)
 {
+	int writeline[16];
+	int tag_array[32];
+	//Type bits
+	writeline[16] = 0;
+	writeline[15] = 0;
 
+	//Tag bits
+	for (int i = 0; i < 32; ++i) 
+	{  
+    	tag_array[i] = tag & (1 << i) ? 1 : 0;
+	}
 	
 }
 
@@ -140,16 +150,22 @@ int main()
 //Function to determine where to write to memory
 int findFreeLine()
 {
-	int readline[32];
+	int readline[16];
+	int M3validMap = 0x50;
 
-	M1line_read(50, readline);
-
-	for(int i=0; i < 32; i++)
+	for(int i=0; i < 4; i++)
 	{
-		if(readline[i] == 0)
+		MemController.read(M3validMap, readline);
+		
+		for(int i=0; i < 16; i++)
 		{
-			return i;
-		}
+			if(readline[i] == 0)
+			{
+				return i;
+			}
+		}	
+		
+		M3validMap++;
 	}
 
 	return 0xFF;
