@@ -36,7 +36,7 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
-void findValidLines(int *validarray);
+int * findValidLines();
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
@@ -248,11 +248,10 @@ int main()
     		if(ts == WORD)
     		{
     		//search for tag in M3, if found read from M3
-    			int *validarray = NULL;
     			int validLine[16];
     			int requestData[64];
 
-    			findValidLines(validarray);
+    			int *validarray = findValidLines();
 
     			for(int valid=0; valid < sizeof(validarray); valid++)
     			{
@@ -322,8 +321,9 @@ int findFreeLine()
 	return 0xFF;
 }
 
-void findValidLines(int *validarray)
+int * findValidLines()
 {
+	int * validarray = NULL;
 	int size = 0;
 	int readline[16];
 	int M3validMap = 0x50;
@@ -345,6 +345,7 @@ void findValidLines(int *validarray)
 
 	validarray = new int[size];
 	int counter = 0;
+	M3validMap = 0x50;
 
 	for(int validRow=0; validRow < 4; validRow++)
 	{
@@ -361,6 +362,8 @@ void findValidLines(int *validarray)
 
 		M3validMap++;
 	}
+
+	return validarray;
 }
 
 //Function to write 128byte word to M2 memory
