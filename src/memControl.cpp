@@ -41,7 +41,7 @@ void M1line_read(int address, int readData[32])
 
 	for(row = address; row < address + 16; row++)
 	{
-		for(bank = 0; bank < 4; bank++)
+		for(bank = 0; bank < 2; bank++)
 		{
 			readData[counter] = M2array[0].read(row);
 			counter++;
@@ -183,7 +183,7 @@ void M2word_write(int address, int data)
 	{
 		for(bank = 0; bank < 4; bank++)
 		{
-			M2array[0].write(row, data);
+			M2array[bank].write(row, data);
 		}
 	}
 }
@@ -198,7 +198,7 @@ void M2word_read(int address, int readData[64])
 	{
 		for(bank = 0; bank < 4; bank++)
 		{
-			readData[counter] = M2array[0].read(row);
+			readData[counter] = M2array[bank].read(row);
 			counter++;
 		}
 	}
@@ -213,7 +213,7 @@ void M3word_write(int address, int data)
 	{
 		for(bank = 0; bank < 8; bank++)
 		{
-			M3array[0].write(row, data);
+			M3array[bank].write(row, data);
 		}
 	}
 }
@@ -228,7 +228,7 @@ void M3word_read(int address, int readData[64])
 	{
 		for(bank = 0; bank < 8; bank++)
 		{
-			readData[counter] = M3array[0].read(row);
+			readData[counter] = M3array[bank].read(row);
 			counter++;
 		}
 	}
