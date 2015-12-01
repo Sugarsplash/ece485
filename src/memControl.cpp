@@ -26,9 +26,14 @@ int M3control_mem[64];
 #define	QUAD 1
 #define	LONG 2
 
+// Offsets for memory addresses
+#define WORD_OFFSET 8		// 8 lines * 16 bits = 128
+#define QUAD_OFFSET 32		// 32 lines * 16 bits = 512
+#define LONG_OFFSET 64		// 64 lines * 16 bits = 1024
+
 // 0xFF is outside the valid address range so if next = 0xFF, there is no next
 #define NO_NEXT 0xFF
-
+#define DATA 0xBEEF
 #define SEND 1
 #define REQUEST 0
 
@@ -111,19 +116,21 @@ int main()
 			case WORD:
 				//findFreeLine needs to find lowest zero in M3valid_array.
 				int free_line = findFreeLine();
-                int m1[16];
-				M1generate(WORD, tag, NO_NEXT, m1);
-                MemController.write(free_line, m1);
-		/*		if(writeLine != 0xFF)
-				{
-					//M1generate needs to create the three byte line to store in M1.
-					M1generate(writeLine, ts, tag);
 
-				}
-				else
+				// M3 is full
+				if(free_line == 0xFF)
 				{
 					//Eviction sequence HERE
 					printf("M3 array is full\n");
+				}
+
+				// Empty line found
+				else
+				{
+					int m1[16];
+					M1generate(WORD, tag, NO_NEXT, m1);
+	                MemController.write(free_line, m1);
+	                M3word_write(free_line * 8, DATA);
 				}
 
 				break;
@@ -190,15 +197,17 @@ int findFreeLine()
 	int readline[16];
 	int M3validMap = 0x50;
 
-	for(int i=0; i < 4; i++)
+	for(int validRow=0; validRow < 4; validRow++)
 	{
 		MemController.read(M3validMap, readline);
 
-		for(int i=0; i < 16; i++)
+		for(int validBit=0; validBit < 16; validBit++)
 		{
-			if(readline[i] == 0)
+			if(readline[validBit] == 0)
 			{
-				return i;
+				readline[validBit] = 1;
+				MemController.write(M3validMap, readline);
+				return validBit;
 			}
 		}
 
