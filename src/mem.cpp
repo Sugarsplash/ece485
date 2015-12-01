@@ -4,6 +4,7 @@
 using namespace std;
 M1::M1(void)
 {
+	//Constructor: zero out the memory
         for (int i = 0; i < 128; ++i)
         {
             for (int j = 0; j < 16; ++j)
@@ -18,6 +19,7 @@ void M1::write(int row, int data[16])
     for (int i = 0; i < 16; ++i)
     {
         mem_matrix[row][i] = data[i];
+	//Add 1 to the latency of the global clock
     }
 
 }
@@ -27,11 +29,13 @@ void M1::read(int row, int readData[16])
     for (int i = 0; i < 16; ++i)
     {
         readData[i] = mem_matrix[row][i];
+	//Add 1 to the latency of the global clock
     }
 }
 
 M2::M2(void)
 {
+    //Constructor: zero out the memory
     for (int i = 0; i < 256; ++i)
     {
         mem_matrix[i] = 0;
@@ -41,15 +45,18 @@ M2::M2(void)
 void M2::write(int row, int data)
 {
 	mem_matrix[row] = data;
+	//Add 8 to the latency of the global clock
 }
 
 int M2::read(int row)
 {
 	return mem_matrix[row];
+	//Add 8 to the latency of the global clock
 }
 
 M3::M3(void)
 {
+    //Constructor: zero out the memory
     for (int i = 0; i < 512; ++i)
     {
         mem_matrix[i] = 0;
@@ -59,11 +66,13 @@ M3::M3(void)
 void M3::write(int row, int data)
 {
 	mem_matrix[row] = data;
+	//Add 15 to the latency of the global clock
 }
 
 int M3::read(int row)
 {
 	return mem_matrix[row];
+	//Add 15 to the latency of the global clock
 }
 
 void print_m1_memory(M1 M1array)

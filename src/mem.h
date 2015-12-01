@@ -1,5 +1,9 @@
 using namespace std;
 
+/* This M1 class will be used to construct a single M1 Memory
+	 The memory will be set as a 2D array in order to access individual bits.
+*/
+
 class M1
 {
 public:
@@ -83,6 +87,7 @@ private:
 	int mem_matrix[512];
 };
 
+//Prototypes
 void print_m1_memory(M1 M1array);
 void print_m2_memory(M2 *M2array);
 void print_m3_memory(M3 *M3array);
