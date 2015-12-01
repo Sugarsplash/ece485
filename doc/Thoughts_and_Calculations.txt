@@ -1,0 +1,42 @@
+5.5 Mbits/s link. 100 MHz clock (10 ns).
+
+(5500000) bits/s * (0.00000001) s = 0.055 bits every clock cycle
+
+Need to wait 16/0.055 (~291 clock cycles) in order to send 2 bytes
+of data to the hub from a device and vice versa.
+
+128 bytes will take ~18618 clock cycles
+
+512 bytes will take ~74473 clock cycles
+
+1024 bytes will take ~148945 clock cycles
+
+-----
+
+1200 bits/s link. 100 MHz clock (10 ns).
+
+(1200) bits/s * (0.00000001) s = 0.000012 bits every clock cycle
+
+Need to wait 16/0.000012 (~1333333 clock cycles) in order to send 2
+bytes of data to the hub from the satellite and vice versa
+
+128 bytes to satellite will take ~85333333 clock cycles
+
+512 bytes to satellite will take ~341333333 clock cycles
+
+1024 bytes to satellite will take ~682666666 clock cycles
+
+If we're assuming that it will take this long to also get to the
+data center, we'll need to add the latency it takes for the data
+link to be established (100 clock cycles). This means that it will
+take 128 bytes ~85333333 + 100 (hub-to-satellite link) + 100
+(satellite-to-data center link) + 100 (data center-to-satellite
+link) + 100 (satellite-to-hub link) = ~85333733 clock cycles.
+Basically just add 400 more clock cycles assuming that all the data
+is streamed at a continuous rate (once the link is established the
+data starts being sent immediately).
+
+This is information for the hub (meaning this should also apply to
+the data center)- 
+[Assume that there is a latency of 100 clock cycles added by the
+satellite for both the up and downlink in each direction]
