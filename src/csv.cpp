@@ -83,7 +83,7 @@ int parse_line(string Line, Info * Data, int Line_Number) {
     Data[Line_Number].ts = atoi(TS.c_str());
     Data[Line_Number].tr_data_tag = atoi(Tag.c_str());
 
-//Debugging
+/*Debugging
 
     printf("%d, %d, %d, %d, %d.\n", Data[Line_Number].time, 
                                     Data[Line_Number].device,
@@ -91,7 +91,7 @@ int parse_line(string Line, Info * Data, int Line_Number) {
                                     Data[Line_Number].ts, 
                                     Data[Line_Number].tr_data_tag);
 
-
+*/
     return 0;
 
 }

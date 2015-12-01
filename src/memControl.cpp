@@ -22,9 +22,9 @@ int M3control_mem[64];
 
 
 //Data Types
-#define WORD 0
-#define	QUAD 1
-#define	LONG 2
+#define WORD 128
+#define	QUAD 512
+#define	LONG 1024
 
 #define SEND 1
 #define REQUEST 0
@@ -42,15 +42,41 @@ void M1generate(int line, int tag)
 {
 	int writeline[16];
 	int tag_array[5];
+	
 	//Type bits
-	writeline[16] = 0;
 	writeline[15] = 0;
+	writeline[14] = 0;
 
 	//Tag bits - will never be more than 5 bits
 	for (int bit = 0; bit < 5; ++bit)
 	{
     	tag_array[4-bit] = tag & (1 << bit) ? 1 : 0;
 	}
+
+	writeline[13] = tag_array[0];
+	writeline[12] = tag_array[1];
+	writeline[11] = tag_array[2];
+	writeline[10] = tag_array[3];
+	writeline[9] = tag_array[4];
+
+	//writeline[8] is a dont care.
+	writeline[8] = 0;
+
+	//7 next bits
+	for(int i=7; i >= 1; i--)
+	{
+		writeline[i] = 1;
+	}
+
+	//writeline[0] is a dont care.
+	writeline[0] = 0;
+
+	for(int j = 15; j >= 0; j--)
+	{
+		printf("%d:%d\n", j, writeline[j]);
+	}
+
+	MemController.write(line, writeline);
 
 }
 
@@ -67,7 +93,7 @@ int main()
 	int ts = Array1[0].ts;
 	int tag = Array1[0].tr_data_tag;
 
-	printf("%d, %d, %d, %d.\n", device, op, ts, tag);
+	//printf("%d, %d, %d, %d.\n", device, op, ts, tag);
 
 //Pseudo Code
 	if(op == SEND)
@@ -77,6 +103,7 @@ int main()
 			case WORD:
 				//findFreeLine needs to find lowest zero in M3valid_array.
 				int writeLine = findFreeLine();
+				M1generate(writeLine, tag);
 		/*		if(writeLine != 0xFF)
 				{
 					//M1generate needs to create the three byte line to store in M1.
