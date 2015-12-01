@@ -2,6 +2,23 @@
 #include <cstdio>
 
 using namespace std;
+M1::M1(void)
+{
+    for (int i = 0; i < 128; ++i)
+    {
+        mem_matrix[i] = 0;
+    }
+}
+
+void M1::write(int row, int data)
+{
+	mem_matrix[row] = data;
+}
+
+int M1::read(int row)
+{
+	return mem_matrix[row];
+}
 
 M2::M2(void)
 {
