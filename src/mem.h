@@ -1,3 +1,21 @@
+using namespace std;
+
+class M1
+{
+public:
+	int memlock;
+
+    M2(void);
+
+	void write(int row, int data);
+	int read(int row);
+
+private:
+	int mem_matrix[128];
+};
+
+
+
 /* This M2 class will be used to construct the M2 x 4 Memory Array
 	Should be a class that has rows of memory as members and read and write as
 	methods. This memory array consists of 4 individual M2 memory chips. Each
@@ -17,7 +35,6 @@
 		-Memory supports noncontiguous memory access but must be aligned.
 */
 
-using namespace std;
 
 class M2
 {

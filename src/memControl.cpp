@@ -6,9 +6,11 @@
 */
 
 #include "mem.h"
+#include "csv.h"
 #include <cstdio>
 
 //These are the banks of memory 
+M1 M1array[2];
 M2 M2array[4];
 M3 M3array[8];
 
@@ -19,16 +21,158 @@ int M2control_mem[16];
 int M3control_mem[64];
 
 //Keep track of valid lines in M2controll_mem and M3controll_mem
-int M2valid_array[16];
-int M3valid_array[64];
+int M1valid_array[80];
 
 //Data Types
-#define WORD = 0
-#define	QUAD = 1
-#define	LONG = 2
+#define WORD 0
+#define	QUAD 1
+#define	LONG 2
 
-#define SEND = 0
-#define REQUEST = 1
+#define SEND 1
+#define REQUEST 0
+
+//Prototypes
+int findFreeLine();
+void M1generate(int line, int size, int tag);
+void M1line_read(int address, int readData[32])
+{
+	int bank, row;
+	int counter = 0;
+
+	for(row = address; row < address + 16; row++)
+	{
+		for(bank = 0; bank < 4; bank++)
+		{
+			readData[counter] = M2array[0].read(row);
+			counter++;
+		}
+	}
+}
+void M2word_write(int address, int data);
+void M2word_read(int address, int readData[64]);
+void M3word_write(int address, int data);
+void M3word_read(int address, int readData[64]);
+
+void M1generate(int line, int size, int tag)
+{
+	switch(size)
+	{
+		case 128:
+			M3control_mem[line] =  
+			break;
+		case 512:
+			break;
+		case 1024:
+			break;
+	}
+}
+
+int main()
+{
+	 Info * Array1 = new Info[CSV1];   //Create array of structs
+
+    //First csv file
+    csv_1(Array1);
+
+
+	int device = Array1[0].device;
+	int op = Array1[0].operation;
+	int ts = Array1[0].ts; 
+	int tag = Array1[0].tr_data_tag;
+
+	printf("%d, %d, %d, %d.\n", device, op, ts, tag);
+
+//Pseudo Code
+	if(op == SEND)
+	{
+		switch (ts)
+		{
+			case WORD:
+				//findFreeLine needs to find lowest zero in M3valid_array.
+				int writeLine = findFreeLine();
+				if(writeLine != 0xFF)
+				{
+					//M1generate needs to create the three byte line to store in M1.
+					M1generate(writeLine, ts, tag);
+
+				}
+				else
+				{
+					//Eviction sequence HERE
+					printf("M3 array is full\n");
+				}
+
+				break;				
+
+			case QUAD:
+				//Function M1generate4 needs to construct 4 M1 3 byte lines.
+				int writeLines[4];
+				for(int i=0; i < 3; i++)
+				{
+					writeLines[i] = findFreeLine();
+				}
+				M1generate4(writeLines);
+				break;
+
+			case LONG:
+				//Function M1generate8 needs to construct 8 M1 3 byte lines.
+				int writeLong[8];
+				for(int i=0; i < 7; i++)
+				{
+					writeLong[i] = findFreeLine();
+				}
+				M1generate8(writeLong);
+				break;
+		}
+	}
+
+
+
+
+/*Test for R/W words at a time
+	int address = 0;
+	int data = 0xDEAD;
+	int readData[64];
+
+	M2word_write(address, data);
+	M3word_write(address, data);
+
+	M2word_read(address, readData);
+
+	for(int i=0; i < 64; i++)
+	{
+		printf("Data at %d: %x\n", i, readData[i]);
+
+	}
+
+	M3word_read(address, readData);
+
+	for(int i=0; i < 64; i++)
+	{
+		printf("Data at %d: %x\n", i, readData[i]);
+
+	}
+
+*/
+
+
+	return 0;
+}
+
+//Function to determine where to write to memory
+int findFreeLine()
+{
+
+	for(int i=0; i < 64; i++)
+	{
+		if(M1valid_array[i] == 0)
+		{
+			return i;
+		}
+	}
+
+	return 0xFF;
+}
 
 //Function to write 128byte word to M2 memory
 void M2word_write(int address, int data)
@@ -88,77 +232,4 @@ void M3word_read(int address, int readData[64])
 			counter++;
 		}
 	}
-}
-
-
-int main()
-{
-	device = 1;
-	op = SEND;
-	int ts = WORD; 
-	int tag = 12345;
-
-	if(op == SEND)
-	{
-		switch (ts)
-		{
-			case WORD:
-				//findFreeLine needs to find lowest zero in M1valid_array.
-				int writeLine = findFreeLine();
-				//M1generate needs to create the three byte line to store in M1.
-				M1generate(writeLine);
-				break;
-
-			case QUAD:
-				//Function M1generate4 needs to construct 4 M1 3 byte lines.
-				int writeLines[4];
-				for(int i=0; i < 3; i++)
-				{
-					writeLines[i] = findFreeLine();
-				}
-				M1generate4(writeLines);
-				break;
-
-			case LONG:
-				//Function M1generate8 needs to construct 8 M1 3 byte lines.
-				int writeLong[8];
-				for(int i=0; i < 7; i++)
-				{
-					writeLong[i] = findFreeLine();
-				}
-				M1generate8(writeLong);
-				break;
-		}
-	}
-
-
-
-
-	int address = 0;
-	int data = 0xDEAD;
-	int readData[64];
-
-	M2word_write(address, data);
-	M3word_write(address, data);
-
-	M2word_read(address, readData);
-
-	for(int i=0; i < 64; i++)
-	{
-		printf("Data at %d: %x\n", i, readData[i]);
-
-	}
-
-	M3word_read(address, readData);
-
-	for(int i=0; i < 64; i++)
-	{
-		printf("Data at %d: %x\n", i, readData[i]);
-
-	}
-
-
-
-
-	return 0;
 }
