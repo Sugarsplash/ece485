@@ -32,17 +32,23 @@ bytes of data to the hub from the satellite and vice versa
 If we're assuming that it will take this long to also get to the
 data center, we'll need to add the latency it takes for the data
 link to be established (100 clock cycles). This means that it will
-take 128 bytes ~85333333 + 100 (hub-to-satellite link) + 100
+take 128 bytes ~85333333 + 100 (hub-to-satellite link) + 150
 (satellite-to-data center link) + 100 (data center-to-satellite
-link) + 100 (satellite-to-hub link) = ~85333733 clock cycles.
-Basically just add 400 more clock cycles assuming that all the data
+link) + 100 (satellite-to-hub link) = ~85333783 clock cycles.
+Basically just add 450 more clock cycles assuming that all the data
 is streamed at a continuous rate (once the link is established the
 data starts being sent immediately).
 
-This is information for the hub (meaning this should also apply to
-the data center)- 
+This is information for the hub -
 [Assume that there is a latency of 100 clock cycles added by the
 satellite for both the up and downlink in each direction]
+
+This is information for the data center -
+[Assume that there is a latency of 100 clock cycles added by the
+satellite for both the up and downlink in each direction. Assume
+that the data center has a latency of 50 clock cycles between
+receiving the 32-bit command and the start of the data
+transmission]
 
 -----
 REPLACEMENT
