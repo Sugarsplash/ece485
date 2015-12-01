@@ -1,3 +1,5 @@
+HUB/DEVICE LINK DETAILS
+
 5.5 Mbits/s link. 100 MHz clock (10 ns).
 
 (5500000) bits/s * (0.00000001) s = 0.055 bits every clock cycle
@@ -12,6 +14,7 @@ of data to the hub from a device and vice versa.
 1024 bytes will take ~148945 clock cycles
 
 -----
+HUB/SATELLITE LINK DETAILS
 
 1200 bits/s link. 100 MHz clock (10 ns).
 
@@ -40,3 +43,14 @@ This is information for the hub (meaning this should also apply to
 the data center)- 
 [Assume that there is a latency of 100 clock cycles added by the
 satellite for both the up and downlink in each direction]
+
+-----
+REPLACEMENT
+
+When attempting to fill an empty piece of memory, check if there is
+no empty memory. If there is no empty memory, implement replacement
+policy. Otherwise, obtain the value of the starting address. Find
+the result of the maximum amount of memory minus that value. If the
+result of the subtraction is less than that of the transaction size,
+the replacement policy needs to be applied. Otherwise, fill in the
+empty piece of memory.
