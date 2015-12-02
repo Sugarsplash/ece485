@@ -31,53 +31,58 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
-void M1generate(int line, int tag);
+void M1generate(int type, int tag, int next, int generated_m1[16]);
 
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
 void M3word_write(int address, int data);
 void M3word_read(int address, int readData[64]);
 
-void M1generate(int line, int tag)
+void M1generate(int type, int tag, int next, int generated_m1[16])
 {
-	int writeline[16];
-	int tag_array[5];
-	
-	//Type bits
-	writeline[15] = 0;
-	writeline[14] = 0;
-
-	//Tag bits - will never be more than 5 bits
-	for (int bit = 0; bit < 5; ++bit)
+    // Turn type integer into bit array
+    int type_bit_array[2];
+    for (int bit = 0; bit < 2; ++bit) //Tag will never be more than 5 bits
 	{
-    	tag_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+    	type_bit_array[1-bit] = type & (1 << bit) ? 1 : 0;
 	}
 
-	writeline[13] = tag_array[0];
-	writeline[12] = tag_array[1];
-	writeline[11] = tag_array[2];
-	writeline[10] = tag_array[3];
-	writeline[9] = tag_array[4];
+    generated_m1[15] = type_bit_array[0];
+	generated_m1[14] = type_bit_array[1];
 
-	//writeline[8] is a dont care.
-	writeline[8] = 0;
-
-	//7 next bits
-	for(int i=7; i >= 1; i--)
+    // Turn tag integer into bit array
+    int tag_bit_array[5];
+	for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
 	{
-		writeline[i] = 1;
+    	tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
 	}
 
-	//writeline[0] is a dont care.
-	writeline[0] = 0;
+	generated_m1[13] = tag_bit_array[0];
+	generated_m1[12] = tag_bit_array[1];
+	generated_m1[11] = tag_bit_array[2];
+	generated_m1[10] = tag_bit_array[3];
+	generated_m1[9] = tag_bit_array[4];
 
-	for(int j = 15; j >= 0; j--)
+	//generated_m1[8] is a dont care.
+	generated_m1[8] = 0;
+
+	// Turn next integer into bit array
+    int next_bit_array[7];
+	for (int bit = 0; bit < 7; ++bit) //Tag will never be more than 5 bits
 	{
-		printf("%d:%d\n", j, writeline[j]);
+    	next_bit_array[6-bit] = next & (1 << bit) ? 1 : 0;
 	}
 
-	MemController.write(line, writeline);
+    generated_m1[7] = next_bit_array[0];
+    generated_m1[6] = next_bit_array[1];
+    generated_m1[5] = next_bit_array[2];
+    generated_m1[4] = next_bit_array[3];
+    generated_m1[3] = next_bit_array[4];
+    generated_m1[2] = next_bit_array[5];
+    generated_m1[1] = next_bit_array[6];
 
+	//generated_m1[0] is a dont care.
+	generated_m1[0] = 0;
 }
 
 int main()
@@ -103,7 +108,8 @@ int main()
 			case WORD:
 				//findFreeLine needs to find lowest zero in M3valid_array.
 				int writeLine = findFreeLine();
-				M1generate(writeLine, tag);
+				M1generate(, tag);
+                MemController.write(line, writeline);
 		/*		if(writeLine != 0xFF)
 				{
 					//M1generate needs to create the three byte line to store in M1.
