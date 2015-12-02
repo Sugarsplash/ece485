@@ -39,14 +39,18 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
+int findFreeLineM2();
 
+void undoM2ValidMap(int block_num);
 void undoM3ValidMap(int block_num);
 
-int findFreeLineM2();
+int * M2findValidLines(int *array_size);
 int * findValidLines(int *array_size);
 int tagCompare(int *check, int length, int tag);
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
+
+void replaceLong();
 
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
@@ -93,6 +97,8 @@ int main()
                         //M2 is also full, need to send old data to satellite
                         if (free_block == INVALID_BLOCK)
                         {
+				//Implement replacement policy
+                        	printf("\nWORD: M2 array is full\n");
                                 //need to send old data and then overwrite it
                         }
 
@@ -102,7 +108,7 @@ int main()
                                 int m1[16];
                                 M1generate(WORD, tag, NO_NEXT, m1);
                                 MemController.write(free_block, m1);
-                                M2word_write(free_block * M2BLOCK_OFFSET, DATA);
+                                M2word_write(free_block * M2BLOCK_OFFSET, 0xFEEB);
                         }
                     }
 
@@ -155,6 +161,64 @@ int main()
 
                         //Eviction sequence HERE
                         printf("\nQUAD: M3 array is full\n");
+
+                	for (int i = 0; i < 4; ++i)
+                    	{
+                    	    free_blocks[i] = findFreeLineM2();
+                    	}
+
+                        // INVALID_BLOCK means no empty line found
+                        if (free_blocks[0] == INVALID_BLOCK ||
+                            free_blocks[1] == INVALID_BLOCK ||
+                            free_blocks[2] == INVALID_BLOCK ||
+                            free_blocks[3] == INVALID_BLOCK)
+			{
+                            // Flip any valid bits back to 0 because we aren't
+                            // writing to memory anymore
+                            if (free_blocks[0] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[0]);
+                            }
+                            if (free_blocks[1] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[1]);
+                            }
+                            if (free_blocks[2] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[2]);
+                            }
+                            if (free_blocks[3] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[3]);
+                            }
+                            printf("\nQUAD: M2 array is full\n");
+			    //Implement replacement policy
+			}
+			
+			else
+			{
+                            // Update M1 and write to M2
+                            for (int block = 0; block < 4; ++block)
+                            {
+                                //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                                int m1[16];
+
+                                int next;
+                                if (block == 3)
+                                {
+                                    next = NO_NEXT;
+                                }
+                                else
+                                {
+                                    next = free_blocks[block+1];
+                                }
+
+                                //printf("\nnext: %d", next);
+                                M1generate(QUAD, tag, next, m1);
+                                MemController.write(free_blocks[block], m1);
+                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xCACA);
+                            }
+			}
                     }
 
                     // Four empty blocks found
@@ -244,6 +308,85 @@ int main()
 
                         //Eviction sequence HERE
                         printf("\nLONG: M3 array is full\n");
+
+                	for (int i = 0; i < 8; ++i)
+                    	{
+                    	    free_blocks[i] = findFreeLineM2();
+                    	}
+
+                        // INVALID_BLOCK means no empty line found
+                        if (free_blocks[0] == INVALID_BLOCK ||
+                            free_blocks[1] == INVALID_BLOCK ||
+                            free_blocks[2] == INVALID_BLOCK ||
+                            free_blocks[3] == INVALID_BLOCK ||
+                            free_blocks[4] == INVALID_BLOCK ||
+                            free_blocks[5] == INVALID_BLOCK ||
+                            free_blocks[6] == INVALID_BLOCK ||
+                            free_blocks[7] == INVALID_BLOCK)
+			{
+                            // Flip any valid bits back to 0 because we aren't
+                            // writing to memory anymore
+                            if (free_blocks[0] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[0]);
+                            }
+                            if (free_blocks[1] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[1]);
+                            }
+                            if (free_blocks[2] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[2]);
+                            }
+                            if (free_blocks[3] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[3]);
+                            }
+                            if (free_blocks[4] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[4]);
+                            }
+                            if (free_blocks[5] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[5]);
+                            }
+                            if (free_blocks[6] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[6]);
+                            }
+                            if (free_blocks[7] != INVALID_BLOCK)
+                            {
+                                undoM2ValidMap(free_blocks[7]);
+                            }
+			    printf("\nLONG: M2 array is full\n");
+			    //Implement replacement policy
+			    replaceLong();
+			}
+			
+			else
+			{
+                            // Update M1 and write to M2
+                            for (int block = 0; block < 8; ++block)
+                            {
+                                //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                                int m1[16];
+
+                                int next;
+                                if (block == 7)
+                                {
+                                    next = NO_NEXT;
+                                }
+                                else
+                                {
+                                    next = free_blocks[block+1];
+                                }
+
+                                //printf("\nnext: %d", next);
+                                M1generate(LONG, tag, next, m1);
+                                MemController.write(free_blocks[block], m1);
+                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xDADA);
+                            }
+			}
                     }
 
                     // 8 empty blocks found
@@ -269,7 +412,7 @@ int main()
                             M1generate(LONG, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
-                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x1111);
+                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x2222);
                         }
                     }
                 }
@@ -436,6 +579,20 @@ int findFreeLine()
 	return INVALID_BLOCK;
 }
 
+void undoM2ValidMap(int block_num)
+{
+    int readline[16];
+    int M2validMap = 0x54;
+
+    int M2validMapIndex = block_num % 16;
+
+    MemController.read(M2validMap, readline);
+
+    readline[M2validMapIndex] = 0;  // Set valid bit back to 0
+
+    MemController.write(M2validMap, readline);
+}
+
 void undoM3ValidMap(int block_num)
 {
     int readline[16];
@@ -451,7 +608,43 @@ void undoM3ValidMap(int block_num)
     MemController.write(M3validMapRow, readline);
 }
 
+int * M2findValidLines (int *array_size)
+{
+	int * validarray = NULL;
+	int size = 0;
+	int readline[16];
+	int M2validMap = 0x54;
 
+	MemController.read(M2validMap, readline);
+
+	for(int validBit=0; validBit < 16; validBit++)
+	{
+		if(readline[validBit] == 1)
+		{
+			size++;
+		}
+	}
+
+	validarray = new int[size];
+
+    *array_size = size;
+
+	int counter = 0;
+	M2validMap = 0x54;
+
+	MemController.read(M2validMap, readline);
+
+	for(int validBit=0; validBit < 16; validBit++)
+	{
+		if(readline[validBit] == 1)
+		{
+			validarray[counter] = 64 + validBit;
+			counter++;
+		}
+	}
+
+	return validarray;
+}
 
 int * findValidLines(int *array_size)
 {
@@ -548,6 +741,64 @@ void M1generate(int type, int tag, int next, int generated_m1[16])
 	generated_m1[0] = 0;
 }
 
+void replaceLong()
+{
+/*
+    	int validLine[16];
+    	int requestData[64];
+	int M3validMap = 0x50;
+	int M2validMap = 0x54;
+
+	int tag_line;
+
+        int M3validarray_length;
+	int M2validarray_length;
+
+        int *M3validarray = findValidLines(&M3validarray_length);
+
+    	for(int valid=0; valid < M3validarray_length; valid++)
+    	{
+    		MemController.read(M3validarray[valid], validLine);
+		tag_line = 	(validLine[13] << 4) +
+				(validLine[12] << 3) +
+				(validLine[11] << 2) +
+				(validLine[10] << 1) +
+				(validLine[9]);
+		if (!(valid % 8))
+			printf("tag_line = %d\n", tag_line);
+	}
+
+        int *M2validarray = findValidLines(&M2validarray_length);
+
+    	for(int valid=0; valid < M2validarray_length; valid++)
+    	{
+    		MemController.read(M2validarray[valid], validLine);
+		tag_line = 	(validLine[13] << 4) +
+				(validLine[12] << 3) +
+				(validLine[11] << 2) +
+				(validLine[10] << 1) +
+				(validLine[9]);
+	}
+
+*/
+	//Start from valid map m3 if 
+
+	/*
+	
+	*/
+
+	//Else, start from valid map m2
+
+		//If the valid map 
+
+	//Global FIFO controller
+	/*
+	if (FIFO < 80)
+		FIFO++;
+	else
+		FIFO = 0; //Reset counter
+	*/
+}
 
 //Function to write 128byte word to M2 memory
 void M2word_write(int address, int data)
