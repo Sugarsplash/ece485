@@ -5,13 +5,13 @@ using namespace std;
 M1::M1(void)
 {
 	//Constructor: zero out the memory
-        for (int i = 0; i < 128; ++i)
+    for (int i = 0; i < 128; ++i)
+    {
+        for (int j = 0; j < 16; ++j)
         {
-            for (int j = 0; j < 16; ++j)
-            {
-                mem_matrix[i][j] = 0;
-            }
+            mem_matrix[i][j] = 0;
         }
+    }
 }
 
 void M1::write(int row, int data[16])
@@ -77,7 +77,7 @@ int M3::read(int row)
 
 void print_m1_memory(M1 M1array)
 {
-    for (int line = 0; line < 128; ++line)       // Line
+    for (int line = 0; line < 0x50; ++line)       // Line
     {
         printf("%02X\t", line);
 
@@ -85,9 +85,14 @@ void print_m1_memory(M1 M1array)
 
         M1array.read(line, data);
 
-        for (int bit = 0; bit < 16; ++bit)
+        for (int bit = 15; bit >= 0; --bit)
         {
             printf("%d", data[bit]);
+
+            if (bit == 14 || bit == 8 || bit == 9 || bit == 1)
+            {
+                printf(" ");
+            }
         }
 
         printf("\n");
@@ -98,6 +103,12 @@ void print_m2_memory(M2 *M2array)
 {
     for (int i = 0; i < 256; ++i)
     {
+        // Add new line between blocks for visual purposes
+        if (!(i % 8))
+        {
+            printf("\n");
+        }
+
         printf("%02X\t", i);
         for (int j = 0; j < 4; ++j)
         {
@@ -112,6 +123,12 @@ void print_m3_memory(M3 *M3array)
 {
     for (int i = 0; i < 512; ++i)
     {
+        // Add new line between blocks for visual purposes
+        if (!(i % 8))
+        {
+            printf("\n");
+        }
+
         printf("%04X\t", i);
         for (int j = 0; j < 8; ++j)
         {

@@ -26,10 +26,7 @@ int M3control_mem[64];
 #define	QUAD 1
 #define	LONG 2
 
-// Offsets for memory addresses
-#define WORD_OFFSET 8		// 8 lines * 16 bits = 128
-#define QUAD_OFFSET 32		// 32 lines * 16 bits = 512
-#define LONG_OFFSET 64		// 64 lines * 16 bits = 1024
+#define BLOCK_OFFSET 8
 
 // 0xFF is outside the valid address range so if next = 0xFF, there is no next
 #define NO_NEXT 0xFF
@@ -97,142 +94,204 @@ void M1generate(int type, int tag, int next, int generated_m1[16])
 
 int main()
 {
-	 Info * Array1 = new Info[CSV1];   //Create array of structs
+	Info * Array1 = new Info[CSV1];   //Create array of structs
 
     //First csv file
     csv_1(Array1);
 
+    for (int i = 0; i < CSV1; ++ i)
+    {
+        int device = Array1[i].device;
+    	int op = Array1[i].operation;
+    	int ts = Array1[i].ts;
+    	int tag = Array1[i].tr_data_tag;
 
-	int device = Array1[0].device;
-	int op = Array1[0].operation;
-	int ts = Array1[0].ts;
-	int tag = Array1[0].tr_data_tag;
+        printf("device = %d\n", device);
+        printf("op = %d\n", op);
+        printf("ts = %d\n", ts);
+        printf("tag = %d\n", tag);
 
-	//printf("%d, %d, %d, %d.\n", device, op, ts, tag);
+        if(op == SEND)
+        {
+            switch (ts)
+            {
+                case WORD:
+                {
+                    //findFreeLine needs to find lowest zero in M3valid_array.
+                    int free_block = findFreeLine();
 
-//Pseudo Code
-	if(op == SEND)
-	{
-		switch (ts)
-		{
-			case WORD:
-			{	//findFreeLine needs to find lowest zero in M3valid_array.
-				int free_line = findFreeLine();
+                    // M3 is full
+                    if(free_block == 0xFF)
+                    {
+                        //Eviction sequence HERE
+                        printf("M3 array is full\n");
+                    }
 
-				// M3 is full
-				if(free_line == 0xFF)
-				{
-					//Eviction sequence HERE
-					printf("M3 array is full\n");
-				}
+                    // Empty line found
+                    else
+                    {
+                        int m1[16];
+                        M1generate(WORD, tag, NO_NEXT, m1);
+                        MemController.write(free_block, m1);
+                        M3word_write(free_block * BLOCK_OFFSET, DATA);
+                    }
+                }
 
-				// Empty block found
-				else
-				{
-					int m1[16];
-					M1generate(WORD, tag, NO_NEXT, m1);
-	                MemController.write(free_line, m1);
-	                M3word_write(free_line * 8, DATA);
-				}
-			}
-				break;
+                    break;
 
-			case QUAD:
-				//Function M1generate4 needs to construct 4 M1 3 byte lines.
-			/*	int writeLines[4];
-				for(int i=0; i < 3; i++)
-				{
-					writeLines[i] = findFreeLine();
-				}
-				M1generate4(writeLines);
-				*/
-				break;
+                case QUAD:
+                {
+                    // Get four free blocks to hold the quad
+                    int free_blocks[4];
 
-		/*	case LONG:
-				//Function M1generate8 needs to construct 8 M1 3 byte lines.
-				int writeLong[8];
-				for(int i=0; i < 7; i++)
-				{
-					writeLong[i] = findFreeLine();
-				}
-				M1generate8(writeLong);
-				break;
-				
-				*/
-		}
-	}
-	else if(op == REQUEST)
-	{
-		if(ts == WORD)
-		{
-		//search for tag in M3, if found read from M3
-			int *validarray = NULL;
-			int validLine[16];
-			int requestData[64];
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        free_blocks[i] = findFreeLine();
+                    }
 
-			findValidLines(validarray);
+                    // M3 is full
+                    if (free_blocks[0] == 0xFF ||
+                        free_blocks[1] == 0xFF ||
+                        free_blocks[2] == 0xFF ||
+                        free_blocks[3] == 0xFF)
+                    {
+                        //Eviction sequence HERE
+                        printf("M3 array is full\n");
+                    }
 
-			for(int valid=0; valid < sizeof(validarray); valid++)
-			{
-				// Turn tag integer into bit array
-    			int tag_bit_array[5];
-				
-				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
-				{
-    				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
-				}
+                    // Four empty blocks found
+                    else
+                    {
+                        // Update M1 and write to M3
+                        for (int block = 0; block < 4; ++block)
+                        {
+                            printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                            int m1[16];
+
+                            int next;
+                            if (block == 3)
+                            {
+                                next = NO_NEXT;
+                            }
+                            else
+                            {
+                                next = free_blocks[block+1];
+                            }
+
+                            printf("\nnext: %d", next);
+                            M1generate(QUAD, tag, next, m1);
+
+                            MemController.write(free_blocks[block], m1);
+                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x1111);
+                        }
+                    }
+                }
+
+                    break;
+
+                case LONG:
+                {
+                    // Get four free blocks to hold the quad
+                    int free_blocks[8];
+
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        free_blocks[i] = findFreeLine();
+                    }
+
+                    // M3 is full
+                    if (free_blocks[0] == 0xFF ||
+                        free_blocks[1] == 0xFF ||
+                        free_blocks[2] == 0xFF ||
+                        free_blocks[3] == 0xFF ||
+                        free_blocks[4] == 0xFF ||
+                        free_blocks[5] == 0xFF ||
+                        free_blocks[6] == 0xFF ||
+                        free_blocks[7] == 0xFF )
+                    {
+                        //Eviction sequence HERE
+                        printf("M3 array is full\n");
+                    }
+
+                    // 8 empty blocks found
+                    else
+                    {
+                        // Update M1 and write to M3
+                        for (int block = 0; block < 8; ++block)
+                        {
+                            printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                            int m1[16];
+
+                            int next;
+                            if (block == 7)
+                            {
+                                next = NO_NEXT;
+                            }
+                            else
+                            {
+                                next = free_blocks[block+1];
+                            }
+
+                            printf("\nnext: %d", next);
+                            M1generate(LONG, tag, next, m1);
+
+                            MemController.write(free_blocks[block], m1);
+                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x1111);
+                        }
+                    }
+                }
+            }
+        }
+
+    	else if(op == REQUEST)
+    	{
+    		if(ts == WORD)
+    		{
+    		//search for tag in M3, if found read from M3
+    			int *validarray = NULL;
+    			int validLine[16];
+    			int requestData[64];
+
+    			findValidLines(validarray);
+
+    			for(int valid=0; valid < sizeof(validarray); valid++)
+    			{
+    				// Turn tag integer into bit array
+        			int tag_bit_array[5];
+
+    				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
+    				{
+        				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+    				}
 
 
-				MemController.read(validarray[valid], validLine);
+    				MemController.read(validarray[valid], validLine);
 
-				if(tag_bit_array[0] == validLine[13] && \
-				   tag_bit_array[1] == validLine[12] && \
-				   tag_bit_array[2] == validLine[11] && \
-				   tag_bit_array[3] == validLine[10] && \
-				   tag_bit_array[4] == validLine[9]  && \
-				   tag_bit_array[5] == validLine[8])
-				{
-					M3word_read(validarray[valid] * 8, requestData);
-					//Send to device function
-				}
-			}	
-			//search for tag in M2
-				//if found read from M2
-			//get from data center
-				//put into M2 and read out to device
+    				if(tag_bit_array[0] == validLine[13] && \
+    				   tag_bit_array[1] == validLine[12] && \
+    				   tag_bit_array[2] == validLine[11] && \
+    				   tag_bit_array[3] == validLine[10] && \
+    				   tag_bit_array[4] == validLine[9]  && \
+    				   tag_bit_array[5] == validLine[8])
+    				{
+    					M3word_read(validarray[valid] * 8, requestData);
+    					//Send to device function
+    				}
+    			}
+    			//search for tag in M2
+    				//if found read from M2
+    			//get from data center
+    				//put into M2 and read out to device
 
-		}
-	}
+    		}
+    	}
+    }
 
+    printf("\n************************* M3 *************************\n");
+    print_m3_memory(M3array);
 
-
-
-/*Test for R/W words at a time
-	int address = 0;
-	int data = 0xDEAD;
-	int readData[64];
-
-	M2word_write(address, data);
-	M3word_write(address, data);
-
-	M2word_read(address, readData);
-
-	for(int i=0; i < 64; i++)
-	{
-		printf("Data at %d: %x\n", i, readData[i]);
-
-	}
-
-	M3word_read(address, readData);
-
-	for(int i=0; i < 64; i++)
-	{
-		printf("Data at %d: %x\n", i, readData[i]);
-
-	}
-
-*/
-
+    printf("\n************************* M1 *************************\n");
+    print_m1_memory(MemController);
 
 	return 0;
 }
