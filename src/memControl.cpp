@@ -41,10 +41,9 @@ int M3control_mem[64];
 int findFreeLine();
 
 void undoM3ValidMap(int block_num);
-void findValidLines(int *validarray);
 
 int findFreeLineM2();
-int * findValidLines();
+int * findValidLines(int *array_size);
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
@@ -132,7 +131,7 @@ int main()
                     if(free_block == INVALID_BLOCK)
                     {
                         //Eviction sequence HERE
-                        printf("M3 array is full\n");
+                        printf("\nWORD: M3 array is full\n");
                         free_block = findFreeLineM2();
 
                         //M2 is also full, need to send old data to satellite
@@ -199,7 +198,7 @@ int main()
                         }
 
                         //Eviction sequence HERE
-                        printf("M3 array is full\n");
+                        printf("\nQUAD: M3 array is full\n");
                     }
 
                     // Four empty blocks found
@@ -288,7 +287,7 @@ int main()
                         }
 
                         //Eviction sequence HERE
-                        printf("M3 array is full\n");
+                        printf("\nLONG: M3 array is full\n");
                     }
 
                     // 8 empty blocks found
@@ -330,9 +329,11 @@ int main()
     			int validLine[16];
     			int requestData[64];
 
-    			int *validarray = findValidLines();
 
-    			for(int valid=0; valid < sizeof(validarray); valid++)
+                int validarray_length;
+                int *validarray = findValidLines(&validarray_length);
+
+    			for(int valid=0; valid < validarray_length; valid++)
     			{
     				// Turn tag integer into bit array
         			int tag_bit_array[5];
@@ -364,12 +365,15 @@ int main()
     		}
     	}
     }
-    //
-    // printf("\n************************* M3 *************************\n");
-    // print_m3_memory(M3array);
-    //
-    // printf("\n************************* M1 *************************\n");
-    // print_m1_memory(MemController);
+
+    printf("\n************************* M3 *************************\n");
+    print_m3_memory(M3array);
+
+    printf("\n************************* M2 *************************\n");
+    print_m2_memory(M2array);
+
+    printf("\n************************* M1 *************************\n");
+    print_m1_memory(MemController);
 
 	return 0;
 }
@@ -438,7 +442,7 @@ void undoM3ValidMap(int block_num)
 
 
 
-int * findValidLines()
+int * findValidLines(int *array_size)
 {
 	int * validarray = NULL;
 	int size = 0;
@@ -461,6 +465,9 @@ int * findValidLines()
 	}
 
 	validarray = new int[size];
+
+    *array_size = size;
+
 	int counter = 0;
 	M3validMap = 0x50;
 

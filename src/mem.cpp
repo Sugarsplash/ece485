@@ -119,6 +119,22 @@ void print_m3_valid_map(M1 M1array)
     }
 }
 
+void print_m2_valid_map(M1 M1array)
+{
+    int line = 0x54;
+
+    printf("%02X\t", line);
+
+    int data[16];
+
+    M1array.read(line, data);
+
+    for (int bit = 15; bit >= 0; --bit)
+    {
+        printf("%d ", data[bit]);
+    }
+}
+
 void print_m2_memory(M2 *M2array)
 {
     for (int i = 0; i < 256; ++i)
