@@ -426,8 +426,6 @@ int main()
     		int validLine[16];
     		int requestData[64];
             int validarray_length;
-            int nextLine[16];
-            int location;
             int tag_found = 0;
 
             int *validarray = findValidLines(&validarray_length);
@@ -457,14 +455,49 @@ int main()
 						{
 							MemController.read(nextRow, validLine);
 							M3word_read(nextRow * 8, requestData);
-							printf("Next M1: %x\n", nextRow);
 							//Send to device function
 						}
 					}while(nextRow != 0x7F);
 				}
-            }  		
+            }
+            //Data is not in M3, search M2
+            else if(tag_found == -1)
+            {
+				validarray = M2findValidLines(&validarray_length);
 
- 			
+				tag_found = tagCompare(validarray, validarray_length, tag);
+
+				if(tag_found != -1)
+            	{
+					if(ts == WORD)
+		 			{
+		 				M2word_read((tag_found - 64)* 16, requestData);
+		 				//Send to device function
+		 			}
+		 			else if(ts == QUAD || ts == LONG)
+					{
+						M2word_read((tag_found - 64)* 16, requestData);
+						//Send to device function
+						
+						MemController.read(tag_found, validLine);
+						
+						int nextRow;
+						
+						do
+						{
+							nextRow = nextBitsToInt(validLine);
+							if(nextRow != 0x7F)
+							{
+								MemController.read(nextRow, validLine);
+								M2word_read((tag_found - 64)* 16, requestData);
+								printf("Next M2: %x\n", nextRow);
+								//Send to device function
+							}
+						}while(nextRow != 0x7F);
+					}
+            	}	
+
+ 			}
     			
     			//search for tag in M2
     				//if found read from M2
