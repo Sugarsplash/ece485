@@ -63,7 +63,7 @@ void print_m1_memory(M1 *M1array)
         printf("%02X\t", i);
         for (int j = 0; j < 4; ++j)
         {
-            printf("%02X ", M1array[j].read(i));
+            printf("%04X ", M1array[j].read(i));
         }
 
         printf("\n");
@@ -77,7 +77,7 @@ void print_m2_memory(M2 *M2array)
         printf("%02X\t", i);
         for (int j = 0; j < 4; ++j)
         {
-            printf("%02X ", M2array[j].read(i));
+            printf("%04X ", M2array[j].read(i));
         }
 
         printf("\n");
@@ -88,10 +88,10 @@ void print_m3_memory(M3 *M3array)
 {
     for (int i = 0; i < 512; ++i)
     {
-        printf("%02X\t", i);
+        printf("%04X\t", i);
         for (int j = 0; j < 8; ++j)
         {
-            printf("%02X ", M3array[j].read(i));
+            printf("%04X ", M3array[j].read(i));
         }
 
         printf("\n");
