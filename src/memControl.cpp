@@ -27,6 +27,7 @@ int M3control_mem[64];
 #define	LONG 2
 
 #define BLOCK_OFFSET 8
+#define M2BLOCK_OFFSET 16
 
 #define INVALID_BLOCK 0xFF
 
@@ -38,8 +39,12 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
+
 void undoM3ValidMap(int block_num);
 void findValidLines(int *validarray);
+
+int findFreeLineM2();
+int * findValidLines();
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
@@ -128,6 +133,22 @@ int main()
                     {
                         //Eviction sequence HERE
                         printf("M3 array is full\n");
+                        free_block = findFreeLineM2();
+
+                        //M2 is also full, need to send old data to satellite
+                        if (free_block == INVALID_BLOCK)
+                        {
+                                //need to send old data and then overwrite it
+                        }
+
+                        // Empty line found
+                        else
+                        {
+                                int m1[16];
+                                M1generate(WORD, tag, NO_NEXT, m1);
+                                MemController.write(free_block, m1);
+                                M2word_write(free_block * M2BLOCK_OFFSET, DATA);
+                        }
                     }
 
                     // Empty line found
@@ -300,48 +321,48 @@ int main()
             }
         }
 
-    // 	else if(op == REQUEST)
-    // 	{
-    // 		if(ts == WORD)
-    // 		{
-    // 		//search for tag in M3, if found read from M3
-    // 			int *validarray = NULL;
-    // 			int validLine[16];
-    // 			int requestData[64];
-    //
-    // 			findValidLines(validarray);
-    //
-    // 			for(int valid=0; valid < sizeof(validarray); valid++)
-    // 			{
-    // 				// Turn tag integer into bit array
-    //     			int tag_bit_array[5];
-    //
-    // 				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
-    // 				{
-    //     				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
-    // 				}
-    //
-    //
-    // 				MemController.read(validarray[valid], validLine);
-    //
-    // 				if(tag_bit_array[0] == validLine[13] && \
-    // 				   tag_bit_array[1] == validLine[12] && \
-    // 				   tag_bit_array[2] == validLine[11] && \
-    // 				   tag_bit_array[3] == validLine[10] && \
-    // 				   tag_bit_array[4] == validLine[9]  && \
-    // 				   tag_bit_array[5] == validLine[8])
-    // 				{
-    // 					M3word_read(validarray[valid] * 8, requestData);
-    // 					//Send to device function
-    // 				}
-    // 			}
-    // 			//search for tag in M2
-    // 				//if found read from M2
-    // 			//get from data center
-    // 				//put into M2 and read out to device
-    //
-    // 		}
-    // 	}
+
+    	else if(op == REQUEST)
+    	{
+    		if(ts == WORD)
+    		{
+    		//search for tag in M3, if found read from M3
+    			int validLine[16];
+    			int requestData[64];
+
+    			int *validarray = findValidLines();
+
+    			for(int valid=0; valid < sizeof(validarray); valid++)
+    			{
+    				// Turn tag integer into bit array
+        			int tag_bit_array[5];
+
+    				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
+    				{
+        				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+    				}
+
+
+    				MemController.read(validarray[valid], validLine);
+
+    				if(tag_bit_array[0] == validLine[13] && \
+    				   tag_bit_array[1] == validLine[12] && \
+    				   tag_bit_array[2] == validLine[11] && \
+    				   tag_bit_array[3] == validLine[10] && \
+    				   tag_bit_array[4] == validLine[9]  && \
+    				   tag_bit_array[5] == validLine[8])
+    				{
+    					M3word_read(validarray[valid] * 8, requestData);
+    					//Send to device function
+    				}
+    			}
+    			//search for tag in M2
+    				//if found read from M2
+    			//get from data center
+    				//put into M2 and read out to device
+
+    		}
+    	}
     }
     //
     // printf("\n************************* M3 *************************\n");
@@ -351,6 +372,27 @@ int main()
     // print_m1_memory(MemController);
 
 	return 0;
+}
+
+//Function to determine where to write to memory
+int findFreeLineM2()
+{
+        int readline[16];
+        int M2validMap = 0x54;
+
+        MemController.read(M2validMap, readline);
+
+        for(int validBit=0; validBit < 16; validBit++)
+        {
+                if(readline[validBit] == 0)
+                {
+                        readline[validBit] = 1;
+                        MemController.write(M2validMap, readline);
+                        return 64 + validBit;
+                }
+        }
+
+        return INVALID_BLOCK;
 }
 
 //Function to determine where to write to memory
@@ -385,9 +427,7 @@ void undoM3ValidMap(int block_num)
     int M3validMap = 0x50;
 
     int M3validMapRow = M3validMap + (block_num / 16);
-    printf("\nM3validMapRow = %02x\n", M3validMapRow);
     int M3validMapIndex = block_num % 16;
-    printf("\nM3validMapIndex = %d\n", M3validMapIndex);
 
     MemController.read(M3validMapRow, readline);
 
@@ -398,8 +438,9 @@ void undoM3ValidMap(int block_num)
 
 
 
-void findValidLines(int *validarray)
+int * findValidLines()
 {
+	int * validarray = NULL;
 	int size = 0;
 	int readline[16];
 	int M3validMap = 0x50;
@@ -421,6 +462,7 @@ void findValidLines(int *validarray)
 
 	validarray = new int[size];
 	int counter = 0;
+	M3validMap = 0x50;
 
 	for(int validRow=0; validRow < 4; validRow++)
 	{
@@ -437,6 +479,8 @@ void findValidLines(int *validarray)
 
 		M3validMap++;
 	}
+
+	return validarray;
 }
 
 //Function to write 128byte word to M2 memory
