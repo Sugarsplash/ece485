@@ -56,6 +56,20 @@ int M3::read(int row)
 	return mem_matrix[row];
 }
 
+void print_m1_memory(M1 *M1array)
+{
+    for (int i = 0; i < 128; ++i)
+    {
+        printf("%02X\t", i);
+        for (int j = 0; j < 4; ++j)
+        {
+            printf("%02X ", M1array[j].read(i));
+        }
+
+        printf("\n");
+    }
+}
+
 void print_m2_memory(M2 *M2array)
 {
     for (int i = 0; i < 256; ++i)

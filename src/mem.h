@@ -5,7 +5,7 @@ class M1
 public:
 	int memlock;
 
-    M2(void);
+    M1(void);
 
 	void write(int row, int data);
 	int read(int row);
@@ -83,5 +83,6 @@ private:
 	int mem_matrix[512];
 };
 
+void print_m1_memory(M1 *M1array);
 void print_m2_memory(M2 *M2array);
 void print_m3_memory(M3 *M3array);
