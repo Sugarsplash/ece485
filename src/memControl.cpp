@@ -20,7 +20,7 @@ extern double LATENCY_COUNTER;
 #define SAT_ACCESS_1KB 682666666
 
 //This will track our unit cost
-#define UNIT_COST 120
+#define UNIT_COST 114
 
 //This will track our communication cost
 float COMM_COST = 0;
@@ -43,42 +43,39 @@ int M3control_mem[64];
 #define	QUAD 1
 #define	LONG 2
 
+//Offsets to access next word in memory arrays
 #define BLOCK_OFFSET 8
 #define M2BLOCK_OFFSET 16
-
+//Sequence to denote invalid block
 #define INVALID_BLOCK 0xFF
 
 // 0xFF is outside the valid address range so if next = 0xFF, there is no next
 #define NO_NEXT 0xFF
-#define DATA 0xBEEF
+//Encoding for send and request commands
 #define SEND 1
 #define REQUEST 0
 
 //Prototypes
 int findFreeLine();
 int findFreeLineM2();
-
 void undoM2ValidMap(int block_num);
 void undoM3ValidMap(int block_num);
-
 int * M2findValidLines(int *array_size);
 int * findValidLines(int *array_size);
 int tagCompare(int *check, int length, int tag);
-
 void M1generate(int type, int tag, int next, int generated_m1[16]);
-
 int * findValidType(int *array_size);
 int * replaceLong(int *index_to_evict, int tag);
-
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
 void M3word_write(int address, int data);
 void M3word_read(int address, int readData[64]);
 int nextBitsToInt(int line[16]);
 
-
+//Begin Simulation
 int main()
 {
+	//Info contains transaction information from csv file
 	Info * Array1 = new Info[CSV1];   //Create array of structs
 
     //First csv file
@@ -90,11 +87,14 @@ int main()
     	int op = Array1[i].operation;
     	int ts = Array1[i].ts;
     	int tag = Array1[i].tr_data_tag;
-
+    	
+    	//Logic for Send transaction
         if(op == SEND)
         {
+        	//Determine action based on transaction size
             switch (ts)
             {
+            	//128byte
                 case WORD:
                 {
                     //findFreeLine needs to find lowest zero in M3valid_array.
@@ -103,25 +103,14 @@ int main()
                     // M3 is full
                     if(free_block == INVALID_BLOCK)
                     {
-                        //Eviction sequence HERE
-                        //WORD: M3 array is full
+            			//find free lines in M2
                         free_block = findFreeLineM2();
+                        int m1[16];
+                        M1generate(WORD, tag, NO_NEXT, m1);
+                        MemController.write(free_block, m1);
+                        M2word_write(free_block * M2BLOCK_OFFSET, tag);
+                   		LATENCY_COUNTER += BYTE_ACCESS_128;
 
-                        //M2 is also full, need to send old data to satellite
-                        if (free_block == INVALID_BLOCK)
-                        {
-
-                        }
-                        // Empty line found
-                        else
-                        {
-                                int m1[16];
-                                M1generate(WORD, tag, NO_NEXT, m1);
-                                MemController.write(free_block, m1);
-                                M2word_write(free_block * M2BLOCK_OFFSET, tag);
-                           		LATENCY_COUNTER += BYTE_ACCESS_128;
-
-                        }
                     }
 
                     // Empty line found
@@ -205,7 +194,6 @@ int main()
                                 undoM2ValidMap(free_blocks[3]);
                             }
                             //QUAD: M2 array is full
-			    //Implement replacement policy
 			}
 
 			else
@@ -551,7 +539,7 @@ int main()
     printf("\n************************* M1 *************************\n");
     print_m1_memory(MemController);
 
-    printf("Simulation Results:\n%e cycles, and communication cost was $%0.2f\n", LATENCY_COUNTER, COMM_COST);
+    printf("Simulation Results:\nUnit Cost: $114.00\n\t%e cycles, and communication cost was $%0.2f\n", LATENCY_COUNTER, COMM_COST);
 
 	return 0;
 }
