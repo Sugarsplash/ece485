@@ -741,63 +741,98 @@ void M1generate(int type, int tag, int next, int generated_m1[16])
 	generated_m1[0] = 0;
 }
 
+//This function finds all rows in M1 from 0x00 to 0x50 that
+//contain a transaction size of 1024 bytes
+int * findValidType(int *array_size)
+{
+	int * validtype = NULL;
+	int size = 0;
+	int type = 0;
+	int tag_line = 0;
+	int readline[16];
+	int M2start = 0x40;
+
+	//Find valid types through M3 and M2
+	for(int Row=0; Row < 0x50; Row++)
+	{
+		//Searching through M3 and M2
+		MemController.read(Row, readline);
+		type = (readline[15] << 1) + readline[14];
+		if (type == 0x3)
+			size++;
+	}
+
+	validtype = new int[size];
+
+    *array_size = size;
+
+	int counter = 0;
+
+	for(int Row=0; Row < 0x50; Row++)
+	{
+		//Fill in array which area to go to when type is valid
+		MemController.read(Row, readline);
+		type = (readline[15] << 1) + readline[14];
+
+		if(type == 0x3)
+		{
+			validtype[counter] = Row;
+			Row = Row + 7;
+			counter++;
+		}
+	}
+
+	return validtype;
+}
+
 void replaceLong()
 {
-/*
-    	int validLine[16];
-    	int requestData[64];
-	int M3validMap = 0x50;
-	int M2validMap = 0x54;
+	int readline[16];
+        int validtype_length;
+        int *validtype = findValidType(&validtype_length);
 
-	int tag_line;
+	int tag_line[validtype_length];
+	int smallest_tag;
+	int row_to_evict;
 
-        int M3validarray_length;
-	int M2validarray_length;
+	int data_to_satellite[64];
 
-        int *M3validarray = findValidLines(&M3validarray_length);
+	for(int i=0; i < validtype_length; i++)
+	{
+		MemController.read(validtype[i], readline);
 
-    	for(int valid=0; valid < M3validarray_length; valid++)
-    	{
-    		MemController.read(M3validarray[valid], validLine);
-		tag_line = 	(validLine[13] << 4) +
-				(validLine[12] << 3) +
-				(validLine[11] << 2) +
-				(validLine[10] << 1) +
-				(validLine[9]);
-		if (!(valid % 8))
-			printf("tag_line = %d\n", tag_line);
+		tag_line[i] = 	(readline[13] << 4) +
+				(readline[12] << 3) +
+				(readline[11] << 2) +
+				(readline[10] << 1) +
+				(readline[9]);
+		if (i = 0)
+			smallest_tag = tag_line[0];
+		else
+		{
+			if (smallest_tag > tag_line[i])
+			{
+				smallest_tag = tag_line[i];
+				row_to_evict = i;
+			}
+		}
 	}
 
-        int *M2validarray = findValidLines(&M2validarray_length);
-
-    	for(int valid=0; valid < M2validarray_length; valid++)
-    	{
-    		MemController.read(M2validarray[valid], validLine);
-		tag_line = 	(validLine[13] << 4) +
-				(validLine[12] << 3) +
-				(validLine[11] << 2) +
-				(validLine[10] << 1) +
-				(validLine[9]);
+	//Check whether we need to evict from M3 or M2
+	if (validtype[row_to_evict] < 0x64) //M3
+	{
+		M3word_read(row_to_evict, data_to_satellite);
+	}
+	else //(0x80 > validtype[row_to_evict] > 0x64), M2
+	{
+		M2word_read(row_to_evict, data_to_satellite);
 	}
 
-*/
-	//Start from valid map m3 if 
-
-	/*
-	
-	*/
-
-	//Else, start from valid map m2
-
-		//If the valid map 
-
-	//Global FIFO controller
-	/*
-	if (FIFO < 80)
-		FIFO++;
-	else
-		FIFO = 0; //Reset counter
-	*/
+	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
+		//Sending 1024 bytes needs 682666666 clock cycles
+		//This will take (10 ns) * 682666666 = 6.826 seconds
+		//The link cost is $(1/60) per second
+		//This transmission will cost us $0.114 or about 11 cents
 }
 
 //Function to write 128byte word to M2 memory
