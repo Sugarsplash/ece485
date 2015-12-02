@@ -44,6 +44,7 @@ void undoM3ValidMap(int block_num);
 
 int findFreeLineM2();
 int * findValidLines(int *array_size);
+int tagCompare(int *check, int length, int tag);
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
@@ -51,53 +52,8 @@ void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
 void M3word_write(int address, int data);
 void M3word_read(int address, int readData[64]);
+int nextBitsToInt(int line[16]);
 
-void M1generate(int type, int tag, int next, int generated_m1[16])
-{
-    // Turn type integer into bit array
-    int type_bit_array[2];
-    for (int bit = 0; bit < 2; ++bit)
-	{
-    	type_bit_array[1-bit] = type & (1 << bit) ? 1 : 0;
-	}
-
-    generated_m1[15] = type_bit_array[0];
-	generated_m1[14] = type_bit_array[1];
-
-    // Turn tag integer into bit array
-    int tag_bit_array[5];
-	for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
-	{
-    	tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
-	}
-
-	generated_m1[13] = tag_bit_array[0];
-	generated_m1[12] = tag_bit_array[1];
-	generated_m1[11] = tag_bit_array[2];
-	generated_m1[10] = tag_bit_array[3];
-	generated_m1[9] = tag_bit_array[4];
-
-	//generated_m1[8] is a dont care.
-	generated_m1[8] = 0;
-
-	// Turn next integer into bit array
-    int next_bit_array[7];
-	for (int bit = 0; bit < 7; ++bit)
-	{
-    	next_bit_array[6-bit] = next & (1 << bit) ? 1 : 0;
-	}
-
-    generated_m1[7] = next_bit_array[0];
-    generated_m1[6] = next_bit_array[1];
-    generated_m1[5] = next_bit_array[2];
-    generated_m1[4] = next_bit_array[3];
-    generated_m1[3] = next_bit_array[4];
-    generated_m1[2] = next_bit_array[5];
-    generated_m1[1] = next_bit_array[6];
-
-	//generated_m1[0] is a dont care.
-	generated_m1[0] = 0;
-}
 
 int main()
 {
@@ -323,46 +279,56 @@ int main()
 
     	else if(op == REQUEST)
     	{
-    		if(ts == WORD)
-    		{
-    		//search for tag in M3, if found read from M3
-    			int validLine[16];
-    			int requestData[64];
+    	//search for tag in M3, if found read from M3
+    		int validLine[16];
+    		int requestData[64];
+            int validarray_length;
+            int nextLine[16];
+            int location;
+            int tag_found = 0;
 
+            int *validarray = findValidLines(&validarray_length);
 
-                int validarray_length;
-                int *validarray = findValidLines(&validarray_length);
+            tag_found = tagCompare(validarray, validarray_length, tag);
+            
+            if(tag_found != -1)
+            {
+				if(ts == WORD)
+	 			{
+	 				M3word_read(tag_found * 8, requestData);
+	 				//Send to device function
+	 			}
+	 			else if(ts == QUAD || ts == LONG)
+				{
+					M3word_read(tag_found * 8, requestData);
+					//Send to device function
+					
+					MemController.read(tag_found, validLine);
+					
+					int nextRow;
+					
+					do
+					{
+						nextRow = nextBitsToInt(validLine);
+							if(nextRow != 0x7F)
+						{
+							MemController.read(nextRow, validLine);
+							M3word_read(nextRow * 8, requestData);
+							printf("Next M1: %x\n", nextRow);
+							//Send to device function
+						}
+					}while(nextRow != 0x7F);
+				}
+            }  		
 
-    			for(int valid=0; valid < validarray_length; valid++)
-    			{
-    				// Turn tag integer into bit array
-        			int tag_bit_array[5];
-
-    				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
-    				{
-        				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
-    				}
-
-
-    				MemController.read(validarray[valid], validLine);
-
-    				if(tag_bit_array[0] == validLine[13] && \
-    				   tag_bit_array[1] == validLine[12] && \
-    				   tag_bit_array[2] == validLine[11] && \
-    				   tag_bit_array[3] == validLine[10] && \
-    				   tag_bit_array[4] == validLine[9]  && \
-    				   tag_bit_array[5] == validLine[8])
-    				{
-    					M3word_read(validarray[valid] * 8, requestData);
-    					//Send to device function
-    				}
-    			}
+ 			
+    			
     			//search for tag in M2
     				//if found read from M2
     			//get from data center
     				//put into M2 and read out to device
 
-    		}
+    		
     	}
     }
 
@@ -376,6 +342,51 @@ int main()
     print_m1_memory(MemController);
 
 	return 0;
+}
+
+//Return first line in check that matches tag
+int tagCompare(int *check, int length, int tag)
+{
+ 	int tag_bit_array[5];
+ 	int line[16];
+
+	for(int i=0; i < length; i++)
+	{
+		// Turn tag integer into bit array
+		for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
+		{
+			tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+		}
+		
+		MemController.read(check[i], line);
+
+		if(tag_bit_array[0] == line[13] && \
+			  tag_bit_array[1] == line[12] && \
+			  tag_bit_array[2] == line[11] && \
+			  tag_bit_array[3] == line[10] && \
+			  tag_bit_array[4] == line[9])
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int nextBitsToInt(int line[16])
+{
+	int nextRow = 0;
+
+	for(int i=1; i < 8; i++)
+   	{
+   		printf("%d\n", line[i]);
+    	if(line[i] == 1)
+    	{
+    		nextRow += 1 << i-1;
+    	}
+   	}
+   	printf("NextRow: %d\n", nextRow);
+   	return nextRow;
 }
 
 //Function to determine where to write to memory
@@ -489,6 +500,54 @@ int * findValidLines(int *array_size)
 
 	return validarray;
 }
+
+void M1generate(int type, int tag, int next, int generated_m1[16])
+{
+    // Turn type integer into bit array
+    int type_bit_array[2];
+    for (int bit = 0; bit < 2; ++bit)
+	{
+    	type_bit_array[1-bit] = type & (1 << bit) ? 1 : 0;
+	}
+
+    generated_m1[15] = type_bit_array[0];
+	generated_m1[14] = type_bit_array[1];
+
+    // Turn tag integer into bit array
+    int tag_bit_array[5];
+	for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
+	{
+    	tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+	}
+
+	generated_m1[13] = tag_bit_array[0];
+	generated_m1[12] = tag_bit_array[1];
+	generated_m1[11] = tag_bit_array[2];
+	generated_m1[10] = tag_bit_array[3];
+	generated_m1[9] = tag_bit_array[4];
+
+	//generated_m1[8] is a dont care.
+	generated_m1[8] = 0;
+
+	// Turn next integer into bit array
+    int next_bit_array[7];
+	for (int bit = 0; bit < 7; ++bit)
+	{
+    	next_bit_array[6-bit] = next & (1 << bit) ? 1 : 0;
+	}
+
+    generated_m1[7] = next_bit_array[0];
+    generated_m1[6] = next_bit_array[1];
+    generated_m1[5] = next_bit_array[2];
+    generated_m1[4] = next_bit_array[3];
+    generated_m1[3] = next_bit_array[4];
+    generated_m1[2] = next_bit_array[5];
+    generated_m1[1] = next_bit_array[6];
+
+	//generated_m1[0] is a dont care.
+	generated_m1[0] = 0;
+}
+
 
 //Function to write 128byte word to M2 memory
 void M2word_write(int address, int data)
