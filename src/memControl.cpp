@@ -22,6 +22,9 @@ extern double LATENCY_COUNTER;
 //This will track our unit cost
 #define UNIT_COST 120
 
+//This will track our communication cost
+float COMM_COST = 0;
+
 //These are the banks of memory
 M1 MemController;
 M2 M2array[4];
@@ -88,11 +91,6 @@ int main()
     	int ts = Array1[i].ts;
     	int tag = Array1[i].tr_data_tag;
 
-        // printf("device = %d\n", device);
-        // printf("op = %d\n", op);
-        // printf("ts = %d\n", ts);
-        // printf("tag = %d\n", tag);
-
         if(op == SEND)
         {
             switch (ts)
@@ -106,17 +104,14 @@ int main()
                     if(free_block == INVALID_BLOCK)
                     {
                         //Eviction sequence HERE
-                        printf("\nWORD: M3 array is full\n");
+                        //WORD: M3 array is full
                         free_block = findFreeLineM2();
 
                         //M2 is also full, need to send old data to satellite
                         if (free_block == INVALID_BLOCK)
                         {
-				//Implement replacement policy
-                        	printf("\nWORD: M2 array is full\n");
-                                //need to send old data and then overwrite it
-                        }
 
+                        }
                         // Empty line found
                         else
                         {
@@ -178,7 +173,7 @@ int main()
                         }
 
                         //Eviction sequence HERE
-                        printf("\nQUAD: M3 array is full\n");
+                        //QUAD: M3 array is full
 
                 	for (int i = 0; i < 4; ++i)
                     	{
@@ -209,7 +204,7 @@ int main()
                             {
                                 undoM2ValidMap(free_blocks[3]);
                             }
-                            printf("\nQUAD: M2 array is full\n");
+                            //QUAD: M2 array is full
 			    //Implement replacement policy
 			}
 
@@ -218,7 +213,6 @@ int main()
                             // Update M1 and write to M2
                             for (int block = 0; block < 4; ++block)
                             {
-                                //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                                 int m1[16];
 
                                 int next;
@@ -231,7 +225,6 @@ int main()
                                     next = free_blocks[block+1];
                                 }
 
-                                //printf("\nnext: %d", next);
                                 M1generate(QUAD, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
                                 M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, tag);
@@ -247,7 +240,6 @@ int main()
                         // Update M1 and write to M3
                         for (int block = 0; block < 4; ++block)
                         {
-                            //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                             int m1[16];
 
                             int next;
@@ -260,7 +252,6 @@ int main()
                                 next = free_blocks[block+1];
                             }
 
-                            //printf("\nnext: %d", next);
                             M1generate(QUAD, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
@@ -329,7 +320,7 @@ int main()
                         }
 
                         //Eviction sequence HERE
-                        printf("\nLONG: M3 array is full\n");
+                        //LONG: M3 array is full
 
                 		for (int i = 0; i < 8; ++i)
                     	{
@@ -380,14 +371,13 @@ int main()
                             {
                                 undoM2ValidMap(free_blocks[7]);
                             }
-			    printf("\nLONG: M2 array is full\n");
+			    //LONG: M2 array is full
 				//Implement replacement policy replaceLong();
 				int index = 0;
 				int * replace_blocks = replaceLong(&index, tag);
 				// Update M1 and write to M2
 				for (int block = 0; block < 8; ++block)
 				{
-					//printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
 					int m1[16];
 
 					int next;
@@ -400,7 +390,6 @@ int main()
 						next = replace_blocks[index] + block + 1;
 					}
 
-					//printf("\nnext: %d", next);
 					M1generate(LONG, tag, next, m1);
 					MemController.write(replace_blocks[index] + block, m1);
 				}
@@ -411,7 +400,6 @@ int main()
                             // Update M1 and write to M2
                             for (int block = 0; block < 8; ++block)
                             {
-                                //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                                 int m1[16];
 
                                 int next;
@@ -424,7 +412,6 @@ int main()
                                     next = free_blocks[block+1];
                                 }
 
-                                //printf("\nnext: %d", next);
                                 M1generate(LONG, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
                                 M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, tag);
@@ -440,7 +427,6 @@ int main()
                         // Update M1 and write to M3
                         for (int block = 0; block < 8; ++block)
                         {
-                            //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                             int m1[16];
 
                             int next;
@@ -453,7 +439,6 @@ int main()
                                 next = free_blocks[block+1];
                             }
 
-                            //printf("\nnext: %d", next);
                             M1generate(LONG, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
@@ -539,7 +524,6 @@ int main()
 							{
 								MemController.read(nextRow, validLine);
 								M2word_read((tag_found - 64)* 16, requestData);
-								printf("Next M2: %x\n", nextRow);
 								LATENCY_COUNTER += BYTE_ACCESS_128;
 							}
 						}while(nextRow != 0x7F);
@@ -548,10 +532,9 @@ int main()
             	//Not in memory, get DataCenter
             	else
             	{
-            		//Data Center function
-
-			//Add 450 clock cycles to latency calculation
-			LATENCY_COUNTER += SAT_ACCESS_1KB  + BYTE_ACCESS_1KB  + 450;
+				//Add 450 clock cycles to latency calculation
+					LATENCY_COUNTER += SAT_ACCESS_1KB  + BYTE_ACCESS_1KB  + 450;
+					COMM_COST += 0.114;
             	}
 
  			}
@@ -568,7 +551,7 @@ int main()
     printf("\n************************* M1 *************************\n");
     print_m1_memory(MemController);
 
-    printf("IT TOOK %f!!!!\n", LATENCY_COUNTER);
+    printf("Simulation Results:\n%e cycles, and communication cost was $%0.2f\n", LATENCY_COUNTER, COMM_COST);
 
 	return 0;
 }
@@ -608,13 +591,11 @@ int nextBitsToInt(int line[16])
 
 	for(int i=1; i < 8; i++)
    	{
-   		printf("%d\n", line[i]);
     	if(line[i] == 1)
     	{
     		nextRow += 1 << i-1;
     	}
    	}
-   	printf("NextRow: %d\n", nextRow);
    	return nextRow;
 }
 
@@ -916,6 +897,7 @@ int * replaceLong(int *index_to_evict, int tag)
 
 		//Add 200 clock cycles to latency for getting to data center
 		LATENCY_COUNTER += SAT_ACCESS_1KB + 200;
+		COMM_COST += 0.114;
 	}
 	else //(0x50 > validtype[index_to_evict] > 0x40), M2
 	{
@@ -923,6 +905,7 @@ int * replaceLong(int *index_to_evict, int tag)
 
 		//Add 200 clock cycles to latency for getting to data center
 		LATENCY_COUNTER += SAT_ACCESS_1KB + 200;
+		COMM_COST += 0.114;
 	}
 
 	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
