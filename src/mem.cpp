@@ -4,20 +4,30 @@
 using namespace std;
 M1::M1(void)
 {
-    for (int i = 0; i < 128; ++i)
-    {
-        mem_matrix[i] = 0;
-    }
+        for (int i = 0; i < 128; ++i)
+        {
+            for (int j = 0; j < 16; ++j)
+            {
+                mem_matrix[i][j] = 0;
+            }
+        }
 }
 
-void M1::write(int row, int data)
+void M1::write(int row, int data[16])
 {
-	mem_matrix[row] = data;
+    for (int i = 0; i < 16; ++i)
+    {
+        mem_matrix[row][i] = data[i];
+    }
+
 }
 
 void M1::read(int row, int readData[16])
 {
-	mem_matrix[row];
+    for (int i = 0; i < 16; ++i)
+    {
+        readData[i] = mem_matrix[row][i];
+    }
 }
 
 M2::M2(void)
@@ -56,14 +66,19 @@ int M3::read(int row)
 	return mem_matrix[row];
 }
 
-void print_m1_memory(M1 *M1array)
+void print_m1_memory(M1 M1array)
 {
-    for (int i = 0; i < 128; ++i)
+    for (int line = 0; line < 128; ++line)       // Line
     {
-        printf("%02X\t", i);
-        for (int j = 0; j < 4; ++j)
+        printf("%02X\t", line);
+
+        int data[16];
+
+        M1array.read(line, data);
+
+        for (int bit = 0; bit < 16; ++bit)
         {
-            printf("%04X ", M1array[j].read(i));
+            printf("%d", data[bit]);
         }
 
         printf("\n");

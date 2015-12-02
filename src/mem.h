@@ -7,7 +7,7 @@ public:
 
     M1(void);
 
-	void write(int row, int data);
+	void write(int row, int data[16]);
 	void read(int row, int readData[16]);
 
 private:
@@ -83,6 +83,6 @@ private:
 	int mem_matrix[512];
 };
 
-void print_m1_memory(M1 *M1array);
+void print_m1_memory(M1 M1array);
 void print_m2_memory(M2 *M2array);
 void print_m3_memory(M3 *M3array);
