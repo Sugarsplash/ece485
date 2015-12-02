@@ -89,10 +89,30 @@ void print_m1_memory(M1 M1array)
         {
             printf("%d", data[bit]);
 
+            // Add spacing between fields (type, x, tag, next, x)
             if (bit == 14 || bit == 8 || bit == 9 || bit == 1)
             {
                 printf(" ");
             }
+        }
+
+        printf("\n");
+    }
+}
+
+void print_m3_valid_map(M1 M1array)
+{
+    for (int line = 0x50; line < 0x54; ++line)       // Line
+    {
+        printf("%02X\t", line);
+
+        int data[16];
+
+        M1array.read(line, data);
+
+        for (int bit = 15; bit >= 0; --bit)
+        {
+            printf("%d ", data[bit]);
         }
 
         printf("\n");

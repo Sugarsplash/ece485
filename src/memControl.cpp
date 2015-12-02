@@ -28,6 +28,8 @@ int M3control_mem[64];
 
 #define BLOCK_OFFSET 8
 
+#define INVALID_BLOCK 0xFF
+
 // 0xFF is outside the valid address range so if next = 0xFF, there is no next
 #define NO_NEXT 0xFF
 #define DATA 0xBEEF
@@ -36,6 +38,7 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
+void undoM3ValidMap(int block_num);
 void findValidLines(int *validarray);
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
@@ -106,10 +109,10 @@ int main()
     	int ts = Array1[i].ts;
     	int tag = Array1[i].tr_data_tag;
 
-        printf("device = %d\n", device);
-        printf("op = %d\n", op);
-        printf("ts = %d\n", ts);
-        printf("tag = %d\n", tag);
+        // printf("device = %d\n", device);
+        // printf("op = %d\n", op);
+        // printf("ts = %d\n", ts);
+        // printf("tag = %d\n", tag);
 
         if(op == SEND)
         {
@@ -121,7 +124,7 @@ int main()
                     int free_block = findFreeLine();
 
                     // M3 is full
-                    if(free_block == 0xFF)
+                    if(free_block == INVALID_BLOCK)
                     {
                         //Eviction sequence HERE
                         printf("M3 array is full\n");
@@ -149,12 +152,31 @@ int main()
                         free_blocks[i] = findFreeLine();
                     }
 
-                    // M3 is full
-                    if (free_blocks[0] == 0xFF ||
-                        free_blocks[1] == 0xFF ||
-                        free_blocks[2] == 0xFF ||
-                        free_blocks[3] == 0xFF)
+                    // INVALID_BLOCK means no empty line found
+                    if (free_blocks[0] == INVALID_BLOCK ||
+                        free_blocks[1] == INVALID_BLOCK ||
+                        free_blocks[2] == INVALID_BLOCK ||
+                        free_blocks[3] == INVALID_BLOCK)
                     {
+                        // Flip any valid bits back to 0 because we aren't
+                        // writing to memory anymore
+                        if (free_blocks[0] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[0]);
+                        }
+                        if (free_blocks[1] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[1]);
+                        }
+                        if (free_blocks[2] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[2]);
+                        }
+                        if (free_blocks[3] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[3]);
+                        }
+
                         //Eviction sequence HERE
                         printf("M3 array is full\n");
                     }
@@ -165,7 +187,7 @@ int main()
                         // Update M1 and write to M3
                         for (int block = 0; block < 4; ++block)
                         {
-                            printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                            //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                             int m1[16];
 
                             int next;
@@ -178,7 +200,7 @@ int main()
                                 next = free_blocks[block+1];
                             }
 
-                            printf("\nnext: %d", next);
+                            //printf("\nnext: %d", next);
                             M1generate(QUAD, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
@@ -191,7 +213,7 @@ int main()
 
                 case LONG:
                 {
-                    // Get four free blocks to hold the quad
+                    // Get eight free blocks to hold the long
                     int free_blocks[8];
 
                     for (int i = 0; i < 8; ++i)
@@ -199,16 +221,51 @@ int main()
                         free_blocks[i] = findFreeLine();
                     }
 
-                    // M3 is full
-                    if (free_blocks[0] == 0xFF ||
-                        free_blocks[1] == 0xFF ||
-                        free_blocks[2] == 0xFF ||
-                        free_blocks[3] == 0xFF ||
-                        free_blocks[4] == 0xFF ||
-                        free_blocks[5] == 0xFF ||
-                        free_blocks[6] == 0xFF ||
-                        free_blocks[7] == 0xFF )
+                    // INVALID_BLOCK means no empty line found
+                    if (free_blocks[0] == INVALID_BLOCK ||
+                        free_blocks[1] == INVALID_BLOCK ||
+                        free_blocks[2] == INVALID_BLOCK ||
+                        free_blocks[3] == INVALID_BLOCK ||
+                        free_blocks[4] == INVALID_BLOCK ||
+                        free_blocks[5] == INVALID_BLOCK ||
+                        free_blocks[6] == INVALID_BLOCK ||
+                        free_blocks[7] == INVALID_BLOCK )
                     {
+                        // Flip any valid bits back to 0 because we aren't
+                        // writing to memory anymore
+                        if (free_blocks[0] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[0]);
+                        }
+                        if (free_blocks[1] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[1]);
+                        }
+                        if (free_blocks[2] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[2]);
+                        }
+                        if (free_blocks[3] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[3]);
+                        }
+                        if (free_blocks[4] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[4]);
+                        }
+                        if (free_blocks[5] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[5]);
+                        }
+                        if (free_blocks[6] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[6]);
+                        }
+                        if (free_blocks[7] != INVALID_BLOCK)
+                        {
+                            undoM3ValidMap(free_blocks[7]);
+                        }
+
                         //Eviction sequence HERE
                         printf("M3 array is full\n");
                     }
@@ -219,7 +276,7 @@ int main()
                         // Update M1 and write to M3
                         for (int block = 0; block < 8; ++block)
                         {
-                            printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+                            //printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
                             int m1[16];
 
                             int next;
@@ -232,7 +289,7 @@ int main()
                                 next = free_blocks[block+1];
                             }
 
-                            printf("\nnext: %d", next);
+                            //printf("\nnext: %d", next);
                             M1generate(LONG, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
@@ -243,55 +300,55 @@ int main()
             }
         }
 
-    	else if(op == REQUEST)
-    	{
-    		if(ts == WORD)
-    		{
-    		//search for tag in M3, if found read from M3
-    			int *validarray = NULL;
-    			int validLine[16];
-    			int requestData[64];
-
-    			findValidLines(validarray);
-
-    			for(int valid=0; valid < sizeof(validarray); valid++)
-    			{
-    				// Turn tag integer into bit array
-        			int tag_bit_array[5];
-
-    				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
-    				{
-        				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
-    				}
-
-
-    				MemController.read(validarray[valid], validLine);
-
-    				if(tag_bit_array[0] == validLine[13] && \
-    				   tag_bit_array[1] == validLine[12] && \
-    				   tag_bit_array[2] == validLine[11] && \
-    				   tag_bit_array[3] == validLine[10] && \
-    				   tag_bit_array[4] == validLine[9]  && \
-    				   tag_bit_array[5] == validLine[8])
-    				{
-    					M3word_read(validarray[valid] * 8, requestData);
-    					//Send to device function
-    				}
-    			}
-    			//search for tag in M2
-    				//if found read from M2
-    			//get from data center
-    				//put into M2 and read out to device
-
-    		}
-    	}
+    // 	else if(op == REQUEST)
+    // 	{
+    // 		if(ts == WORD)
+    // 		{
+    // 		//search for tag in M3, if found read from M3
+    // 			int *validarray = NULL;
+    // 			int validLine[16];
+    // 			int requestData[64];
+    //
+    // 			findValidLines(validarray);
+    //
+    // 			for(int valid=0; valid < sizeof(validarray); valid++)
+    // 			{
+    // 				// Turn tag integer into bit array
+    //     			int tag_bit_array[5];
+    //
+    // 				for (int bit = 0; bit < 5; ++bit) //Tag will never be more than 5 bits
+    // 				{
+    //     				tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
+    // 				}
+    //
+    //
+    // 				MemController.read(validarray[valid], validLine);
+    //
+    // 				if(tag_bit_array[0] == validLine[13] && \
+    // 				   tag_bit_array[1] == validLine[12] && \
+    // 				   tag_bit_array[2] == validLine[11] && \
+    // 				   tag_bit_array[3] == validLine[10] && \
+    // 				   tag_bit_array[4] == validLine[9]  && \
+    // 				   tag_bit_array[5] == validLine[8])
+    // 				{
+    // 					M3word_read(validarray[valid] * 8, requestData);
+    // 					//Send to device function
+    // 				}
+    // 			}
+    // 			//search for tag in M2
+    // 				//if found read from M2
+    // 			//get from data center
+    // 				//put into M2 and read out to device
+    //
+    // 		}
+    // 	}
     }
-
-    printf("\n************************* M3 *************************\n");
-    print_m3_memory(M3array);
-
-    printf("\n************************* M1 *************************\n");
-    print_m1_memory(MemController);
+    //
+    // printf("\n************************* M3 *************************\n");
+    // print_m3_memory(M3array);
+    //
+    // printf("\n************************* M1 *************************\n");
+    // print_m1_memory(MemController);
 
 	return 0;
 }
@@ -319,8 +376,27 @@ int findFreeLine()
 		M3validMap++;
 	}
 
-	return 0xFF;
+	return INVALID_BLOCK;
 }
+
+void undoM3ValidMap(int block_num)
+{
+    int readline[16];
+    int M3validMap = 0x50;
+
+    int M3validMapRow = M3validMap + (block_num / 16);
+    printf("\nM3validMapRow = %02x\n", M3validMapRow);
+    int M3validMapIndex = block_num % 16;
+    printf("\nM3validMapIndex = %d\n", M3validMapIndex);
+
+    MemController.read(M3validMapRow, readline);
+
+    readline[M3validMapIndex] = 0;  // Set valid bit back to 0
+
+    MemController.write(M3validMapRow, readline);
+}
+
+
 
 void findValidLines(int *validarray)
 {

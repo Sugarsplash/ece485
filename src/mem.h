@@ -91,3 +91,4 @@ private:
 void print_m1_memory(M1 M1array);
 void print_m2_memory(M2 *M2array);
 void print_m3_memory(M3 *M3array);
+void print_m3_valid_map(M1 M1array);
