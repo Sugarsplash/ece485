@@ -1,6 +1,6 @@
-/* Here is a little code to start tackling memory controller logic. 
+/* Here is a little code to start tackling memory controller logic.
    The functions below should read/write a 128byte packet to the memory arrays.
-   They do not take into account latency or care if they overwrite or read 
+   They do not take into account latency or care if they overwrite or read
    garbage. At this point they do not update the controller memory either, nor
    should they, I think that should happen in a function that calls these.
 */
@@ -9,12 +9,12 @@
 #include "csv.h"
 #include <cstdio>
 
-//These are the banks of memory 
+//These are the banks of memory
 M1 MemController;
 M2 M2array[4];
 M3 M3array[8];
 
-/*These are parts of the M1 memory reserved for controll memory for each 
+/*These are parts of the M1 memory reserved for controll memory for each
   mem array
 */
 int M2control_mem[16];
@@ -41,17 +41,17 @@ void M3word_read(int address, int readData[64]);
 void M1generate(int line, int tag)
 {
 	int writeline[16];
-	int tag_array[32];
+	int tag_array[5];
 	//Type bits
 	writeline[16] = 0;
 	writeline[15] = 0;
 
-	//Tag bits
-	for (int i = 0; i < 32; ++i) 
-	{  
-    	tag_array[i] = tag & (1 << i) ? 1 : 0;
+	//Tag bits - will never be more than 5 bits
+	for (int bit = 0; bit < 5; ++bit)
+	{
+    	tag_array[4-bit] = tag & (1 << bit) ? 1 : 0;
 	}
-	
+
 }
 
 int main()
@@ -64,7 +64,7 @@ int main()
 
 	int device = Array1[0].device;
 	int op = Array1[0].operation;
-	int ts = Array1[0].ts; 
+	int ts = Array1[0].ts;
 	int tag = Array1[0].tr_data_tag;
 
 	printf("%d, %d, %d, %d.\n", device, op, ts, tag);
@@ -89,7 +89,7 @@ int main()
 					printf("M3 array is full\n");
 				}
 
-				break;				
+				break;
 
 			case QUAD:
 				//Function M1generate4 needs to construct 4 M1 3 byte lines.
@@ -156,15 +156,15 @@ int findFreeLine()
 	for(int i=0; i < 4; i++)
 	{
 		MemController.read(M3validMap, readline);
-		
+
 		for(int i=0; i < 16; i++)
 		{
 			if(readline[i] == 0)
 			{
 				return i;
 			}
-		}	
-		
+		}
+
 		M3validMap++;
 	}
 
@@ -230,6 +230,3 @@ void M3word_read(int address, int readData[64])
 		}
 	}
 }
-
-
-
