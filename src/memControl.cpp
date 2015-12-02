@@ -9,6 +9,16 @@
 #include "csv.h"
 #include <cstdio>
 
+//Global latency counter
+extern int LATENCY_COUNTER;
+//Precalculated device access latency due to bandwidth of connection
+#define BYTE_ACCESS_128 18619
+#define BYTE_ACCESS_512 74473
+#define BYTE_ACCESS_1KB 148945
+
+//This will track our unit cost
+#define UNIT_COST 120
+
 //These are the banks of memory
 M1 MemController;
 M2 M2array[4];
@@ -19,6 +29,7 @@ M3 M3array[8];
 */
 int M2control_mem[16];
 int M3control_mem[64];
+
 
 
 //Data Types
@@ -109,6 +120,8 @@ int main()
                                 M1generate(WORD, tag, NO_NEXT, m1);
                                 MemController.write(free_block, m1);
                                 M2word_write(free_block * M2BLOCK_OFFSET, 0xFEEB);
+                           		LATENCY_COUNTER += BYTE_ACCESS_128;
+
                         }
                     }
 
@@ -119,6 +132,7 @@ int main()
                         M1generate(WORD, tag, NO_NEXT, m1);
                         MemController.write(free_block, m1);
                         M3word_write(free_block * BLOCK_OFFSET, DATA);
+						LATENCY_COUNTER += BYTE_ACCESS_128;
                     }
                 }
 
@@ -217,6 +231,8 @@ int main()
                                 M1generate(QUAD, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
                                 M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xCACA);
+								LATENCY_COUNTER += BYTE_ACCESS_128;
+                          
                             }
 			}
                     }
@@ -245,6 +261,8 @@ int main()
 
                             MemController.write(free_blocks[block], m1);
                             M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x1111);
+ 							LATENCY_COUNTER += BYTE_ACCESS_128;
+
                         }
                     }
                 }
@@ -385,6 +403,8 @@ int main()
                                 M1generate(LONG, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
                                 M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xDADA);
+								LATENCY_COUNTER += BYTE_ACCESS_128;
+
                             }
 			}
                     }
@@ -413,6 +433,8 @@ int main()
 
                             MemController.write(free_blocks[block], m1);
                             M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x2222);
+							LATENCY_COUNTER += BYTE_ACCESS_128;
+
                         }
                     }
                 }
@@ -437,13 +459,13 @@ int main()
 				if(ts == WORD)
 	 			{
 	 				M3word_read(tag_found * 8, requestData);
-	 				//Send to device function
+					LATENCY_COUNTER += BYTE_ACCESS_128;
 	 			}
 	 			else if(ts == QUAD || ts == LONG)
 				{
 					M3word_read(tag_found * 8, requestData);
-					//Send to device function
-					
+					LATENCY_COUNTER += BYTE_ACCESS_128;
+				
 					MemController.read(tag_found, validLine);
 					
 					int nextRow;
@@ -455,7 +477,7 @@ int main()
 						{
 							MemController.read(nextRow, validLine);
 							M3word_read(nextRow * 8, requestData);
-							//Send to device function
+							LATENCY_COUNTER += BYTE_ACCESS_128;
 						}
 					}while(nextRow != 0x7F);
 				}
@@ -472,13 +494,15 @@ int main()
 					if(ts == WORD)
 		 			{
 		 				M2word_read((tag_found - 64)* 16, requestData);
-		 				//Send to device function
+
+						LATENCY_COUNTER += BYTE_ACCESS_128;
 		 			}
 		 			else if(ts == QUAD || ts == LONG)
 					{
 						M2word_read((tag_found - 64)* 16, requestData);
-						//Send to device function
 						
+						LATENCY_COUNTER += BYTE_ACCESS_128;
+
 						MemController.read(tag_found, validLine);
 						
 						int nextRow;
@@ -491,20 +515,20 @@ int main()
 								MemController.read(nextRow, validLine);
 								M2word_read((tag_found - 64)* 16, requestData);
 								printf("Next M2: %x\n", nextRow);
-								//Send to device function
+								LATENCY_COUNTER += BYTE_ACCESS_128;
 							}
 						}while(nextRow != 0x7F);
 					}
-            	}	
+            	}
+            	//Not in memory, get DataCenter
+            	else
+            	{
+            		//From data Center function
+            	}
+
 
  			}
-    			
-    			//search for tag in M2
-    				//if found read from M2
-    			//get from data center
-    				//put into M2 and read out to device
-
-    		
+    			   		
     	}
     }
 
@@ -516,6 +540,8 @@ int main()
 
     printf("\n************************* M1 *************************\n");
     print_m1_memory(MemController);
+
+    printf("IT TOOK %d!!!!\n", LATENCY_COUNTER);
 
 	return 0;
 }
@@ -845,6 +871,8 @@ void M2word_write(int address, int data)
 			M2array[bank].write(row, data);
 		}
 	}
+
+	LATENCY_COUNTER += 146;
 }
 
 //Function to read 128byte word from M2 memory
@@ -861,6 +889,8 @@ void M2word_read(int address, int readData[64])
 			counter++;
 		}
 	}
+
+	LATENCY_COUNTER += 146;
 }
 
 //Function to write 128byte word to M3 memory
@@ -875,6 +905,8 @@ void M3word_write(int address, int data)
 			M3array[bank].write(row, data);
 		}
 	}
+
+	LATENCY_COUNTER += 134;
 }
 
 //Function to read 128byte word from M3 memory
@@ -891,4 +923,6 @@ void M3word_read(int address, int readData[64])
 			counter++;
 		}
 	}
+
+	LATENCY_COUNTER += 134;
 }

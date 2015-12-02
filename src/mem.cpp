@@ -2,6 +2,8 @@
 #include <cstdio>
 
 using namespace std;
+int LATENCY_COUNTER = 0;
+
 M1::M1(void)
 {
 	//Constructor: zero out the memory
@@ -22,6 +24,8 @@ void M1::write(int row, int data[16])
 	//Add 1 to the latency of the global clock
     }
 
+    LATENCY_COUNTER += 2;
+
 }
 
 void M1::read(int row, int readData[16])
@@ -31,6 +35,9 @@ void M1::read(int row, int readData[16])
         readData[i] = mem_matrix[row][i];
 	//Add 1 to the latency of the global clock
     }
+
+    LATENCY_COUNTER += 2;
+
 }
 
 M2::M2(void)
