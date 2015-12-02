@@ -2,7 +2,7 @@
 #include <cstdio>
 
 using namespace std;
-int LATENCY_COUNTER = 0;
+double LATENCY_COUNTER = 0;
 
 M1::M1(void)
 {

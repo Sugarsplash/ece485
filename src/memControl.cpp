@@ -10,11 +10,14 @@
 #include <cstdio>
 
 //Global latency counter
-extern int LATENCY_COUNTER;
+extern double LATENCY_COUNTER;
 //Precalculated device access latency due to bandwidth of connection
 #define BYTE_ACCESS_128 18619
 #define BYTE_ACCESS_512 74473
 #define BYTE_ACCESS_1KB 148945
+
+//Precalculated satellite access time
+#define SAT_ACCESS_1KB 682666666
 
 //This will track our unit cost
 #define UNIT_COST 120
@@ -327,7 +330,7 @@ int main()
                         //Eviction sequence HERE
                         printf("\nLONG: M3 array is full\n");
 
-                	for (int i = 0; i < 8; ++i)
+                		for (int i = 0; i < 8; ++i)
                     	{
                     	    free_blocks[i] = findFreeLineM2();
                     	}
@@ -341,7 +344,7 @@ int main()
                             free_blocks[5] == INVALID_BLOCK ||
                             free_blocks[6] == INVALID_BLOCK ||
                             free_blocks[7] == INVALID_BLOCK)
-			{
+						{
                             // Flip any valid bits back to 0 because we aren't
                             // writing to memory anymore
                             if (free_blocks[0] != INVALID_BLOCK)
@@ -376,13 +379,13 @@ int main()
                             {
                                 undoM2ValidMap(free_blocks[7]);
                             }
-			    printf("\nLONG: M2 array is full\n");
-			    //Implement replacement policy
-			    replaceLong();
-			}
+			    			printf("\nLONG: M2 array is full\n");
+			    			//Implement replacement policy
+			   				replaceLong();
+						}
 			
-			else
-			{
+						else
+						{
                             // Update M1 and write to M2
                             for (int block = 0; block < 8; ++block)
                             {
@@ -406,7 +409,7 @@ int main()
 								LATENCY_COUNTER += BYTE_ACCESS_128;
 
                             }
-			}
+						}
                     }
 
                     // 8 empty blocks found
@@ -887,10 +890,15 @@ void replaceLong()
 	if (validtype[index_to_evict] < 0x64) //M3
 	{
 		M3word_read(index_to_evict, data_to_satellite);
+
+		LATENCY_COUNTER += SAT_ACCESS_1KB;
 	}
 	else //(0x80 > validtype[index_to_evict] > 0x64), M2
 	{
 		M2word_read(index_to_evict, data_to_satellite);
+
+		LATENCY_COUNTER += SAT_ACCESS_1KB;
+
 	}
 
 	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
