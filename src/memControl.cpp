@@ -22,9 +22,12 @@ int M3control_mem[64];
 
 
 //Data Types
-#define WORD 128
-#define	QUAD 512
-#define	LONG 1024
+#define WORD 0
+#define	QUAD 1
+#define	LONG 2
+
+// 0xFF is outside the valid address range so if next = 0xFF, there is no next
+#define NO_NEXT 0xFF
 
 #define SEND 1
 #define REQUEST 0
@@ -42,7 +45,7 @@ void M1generate(int type, int tag, int next, int generated_m1[16])
 {
     // Turn type integer into bit array
     int type_bit_array[2];
-    for (int bit = 0; bit < 2; ++bit) //Tag will never be more than 5 bits
+    for (int bit = 0; bit < 2; ++bit)
 	{
     	type_bit_array[1-bit] = type & (1 << bit) ? 1 : 0;
 	}
@@ -68,7 +71,7 @@ void M1generate(int type, int tag, int next, int generated_m1[16])
 
 	// Turn next integer into bit array
     int next_bit_array[7];
-	for (int bit = 0; bit < 7; ++bit) //Tag will never be more than 5 bits
+	for (int bit = 0; bit < 7; ++bit)
 	{
     	next_bit_array[6-bit] = next & (1 << bit) ? 1 : 0;
 	}
@@ -107,9 +110,10 @@ int main()
 		{
 			case WORD:
 				//findFreeLine needs to find lowest zero in M3valid_array.
-				int writeLine = findFreeLine();
-				M1generate(, tag);
-                MemController.write(line, writeline);
+				int free_line = findFreeLine();
+                int m1[16];
+				M1generate(WORD, tag, NO_NEXT, m1);
+                MemController.write(free_line, m1);
 		/*		if(writeLine != 0xFF)
 				{
 					//M1generate needs to create the three byte line to store in M1.
