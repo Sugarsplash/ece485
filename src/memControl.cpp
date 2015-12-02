@@ -27,6 +27,7 @@ int M3control_mem[64];
 #define	LONG 2
 
 #define BLOCK_OFFSET 8
+#define M2BLOCK_OFFSET 16
 
 // 0xFF is outside the valid address range so if next = 0xFF, there is no next
 #define NO_NEXT 0xFF
@@ -36,6 +37,7 @@ int M3control_mem[64];
 
 //Prototypes
 int findFreeLine();
+int findFreeLineM2();
 int * findValidLines();
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
@@ -125,6 +127,22 @@ int main()
                     {
                         //Eviction sequence HERE
                         printf("M3 array is full\n");
+                        free_block = findFreeLineM2();
+
+                        //M2 is also full, need to send old data to satellite
+                        if (free_block == 0xFF)
+                        {
+                                //need to send old data and then overwrite it
+                        }
+
+                        // Empty line found
+                        else
+                        {
+                                int m1[16];
+                                M1generate(WORD, tag, NO_NEXT, m1);
+                                MemController.write(free_block, m1);
+                                M2word_write(free_block * M2BLOCK_OFFSET, DATA);
+                        }
                     }
 
                     // Empty line found
@@ -293,6 +311,27 @@ int main()
     print_m1_memory(MemController);
 
 	return 0;
+}
+
+//Function to determine where to write to memory
+int findFreeLineM2()
+{
+        int readline[16];
+        int M2validMap = 0x54;
+
+        MemController.read(M2validMap, readline);
+
+        for(int validBit=0; validBit < 16; validBit++)
+        {
+                if(readline[validBit] == 0)
+                {
+                        readline[validBit] = 1;
+                        MemController.write(M2validMap, readline);
+                        return 64 + validBit;
+                }
+        }
+
+        return 0xFF;
 }
 
 //Function to determine where to write to memory
