@@ -10,7 +10,7 @@
 #include <cstdio>
 
 //Global latency counter
-extern unsigned int LATENCY_COUNTER;
+extern double LATENCY_COUNTER;
 //Precalculated device access latency due to bandwidth of connection
 #define BYTE_ACCESS_128 18619
 #define BYTE_ACCESS_512 74473
@@ -548,9 +548,11 @@ int main()
             	//Not in memory, get DataCenter
             	else
             	{
-            		//From data Center function
-            	}
+            		//Data Center function
 
+			//Add 450 clock cycles to latency calculation
+			LATENCY_COUNTER += SAT_ACCESS_1KB  + BYTE_ACCESS_1KB  + 450;
+            	}
 
  			}
     			   		
@@ -566,7 +568,7 @@ int main()
     printf("\n************************* M1 *************************\n");
     print_m1_memory(MemController);
 
-    printf("IT TOOK %u!!!!\n", LATENCY_COUNTER);
+    printf("IT TOOK %f!!!!\n", LATENCY_COUNTER);
 
 	return 0;
 }
@@ -912,13 +914,15 @@ int * replaceLong(int *index_to_evict, int tag)
 	{
 		M3word_read(validtype[*index_to_evict], data_to_satellite);
 
-		LATENCY_COUNTER += SAT_ACCESS_1KB;
+		//Add 200 clock cycles to latency for getting to data center
+		LATENCY_COUNTER += SAT_ACCESS_1KB + 200;
 	}
 	else //(0x50 > validtype[index_to_evict] > 0x40), M2
 	{
 		M2word_read(validtype[*index_to_evict], data_to_satellite);
 
-		LATENCY_COUNTER += SAT_ACCESS_1KB;
+		//Add 200 clock cycles to latency for getting to data center
+		LATENCY_COUNTER += SAT_ACCESS_1KB + 200;
 	}
 
 	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
