@@ -10,7 +10,7 @@
 #include <cstdio>
 
 //Global latency counter
-extern double LATENCY_COUNTER;
+extern unsigned int LATENCY_COUNTER;
 //Precalculated device access latency due to bandwidth of connection
 #define BYTE_ACCESS_128 18619
 #define BYTE_ACCESS_512 74473
@@ -64,7 +64,8 @@ int tagCompare(int *check, int length, int tag);
 
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
-void replaceLong();
+int * findValidType(int *array_size);
+int * replaceLong(int *index_to_evict);
 
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
@@ -344,7 +345,7 @@ int main()
                             free_blocks[5] == INVALID_BLOCK ||
                             free_blocks[6] == INVALID_BLOCK ||
                             free_blocks[7] == INVALID_BLOCK)
-						{
+			{
                             // Flip any valid bits back to 0 because we aren't
                             // writing to memory anymore
                             if (free_blocks[0] != INVALID_BLOCK)
@@ -379,13 +380,34 @@ int main()
                             {
                                 undoM2ValidMap(free_blocks[7]);
                             }
-			    			printf("\nLONG: M2 array is full\n");
-			    			//Implement replacement policy
-			   				replaceLong();
-						}
+			    printf("\nLONG: M2 array is full\n");
+				//Implement replacement policy replaceLong();
+				int index = 0;
+				int * replace_blocks = replaceLong(&index);
+				// Update M1 and write to M2
+				for (int block = 0; block < 8; ++block)
+				{
+					//printf("\nfree_blocks[%d] = %d\n", block, free_blocks[block]);
+					int m1[16];
+
+					int next;
+					if (block == 7)
+					{
+						next = NO_NEXT;
+					}
+					else
+					{
+						next = replace_blocks[index] + block + 1;
+					}
+
+					//printf("\nnext: %d", next);
+					M1generate(LONG, tag, next, m1);
+					MemController.write(replace_blocks[index] + block, m1);
+				}
+			}
 			
-						else
-						{
+			else	
+			{
                             // Update M1 and write to M2
                             for (int block = 0; block < 8; ++block)
                             {
@@ -544,7 +566,7 @@ int main()
     printf("\n************************* M1 *************************\n");
     print_m1_memory(MemController);
 
-    printf("IT TOOK %d!!!!\n", LATENCY_COUNTER);
+    printf("IT TOOK %u!!!!\n", LATENCY_COUNTER);
 
 	return 0;
 }
@@ -850,7 +872,7 @@ int * findValidType(int *array_size)
 	return validtype;
 }
 
-void replaceLong()
+int * replaceLong(int *index_to_evict)
 {
 	int readline[16];
         int validtype_length;
@@ -858,7 +880,6 @@ void replaceLong()
 
 	int tag_line[validtype_length];
 	int smallest_tag;
-	int index_to_evict;
 
 	int data_to_satellite[64];
 
@@ -874,31 +895,30 @@ void replaceLong()
 		if (i == 0)
 		{
 			smallest_tag = tag_line[0];
-			index_to_evict = 0;
+			*index_to_evict = 0;
 		}
 		else
 		{
 			if (smallest_tag > tag_line[i])
 			{
 				smallest_tag = tag_line[i];
-				index_to_evict = i;
+				*index_to_evict = i;
 			}
 		}
 	}
 
 	//Check whether we need to evict from M3 or M2
-	if (validtype[index_to_evict] < 0x64) //M3
+	if (validtype[*index_to_evict] < 0x40) //M3
 	{
-		M3word_read(index_to_evict, data_to_satellite);
+		M3word_read(validtype[*index_to_evict], data_to_satellite);
 
 		LATENCY_COUNTER += SAT_ACCESS_1KB;
 	}
-	else //(0x80 > validtype[index_to_evict] > 0x64), M2
+	else //(0x50 > validtype[index_to_evict] > 0x40), M2
 	{
-		M2word_read(index_to_evict, data_to_satellite);
+		M2word_read(validtype[*index_to_evict], data_to_satellite);
 
 		LATENCY_COUNTER += SAT_ACCESS_1KB;
-
 	}
 
 	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
@@ -906,6 +926,25 @@ void replaceLong()
 		//This will take (10 ns) * 682666666 = 6.826 seconds
 		//The link cost is $(1/60) per second
 		//This transmission will cost us $0.114 or about 11 cents
+
+	//Start overwriting the data
+	if (validtype[*index_to_evict] < 0x40) //M3
+	{
+		for(int i=0; i < 8; i++)
+		{
+			M3word_write((validtype[*index_to_evict]+i)*BLOCK_OFFSET, smallest_tag);
+		}
+	}
+	else //(0x50 > validtype[index_to_evict] > 0x40), M2
+	{
+		for(int i=0; i < 8; i++)
+		{
+			M2word_write((validtype[*index_to_evict]+i)*M2BLOCK_OFFSET, smallest_tag);
+		}
+	}
+
+	return validtype;
+
 }
 
 //Function to write 128byte word to M2 memory
