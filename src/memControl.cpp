@@ -65,7 +65,7 @@ int tagCompare(int *check, int length, int tag);
 void M1generate(int type, int tag, int next, int generated_m1[16]);
 
 int * findValidType(int *array_size);
-int * replaceLong(int *index_to_evict);
+int * replaceLong(int *index_to_evict, int tag);
 
 void M2word_write(int address, int data);
 void M2word_read(int address, int readData[64]);
@@ -383,7 +383,7 @@ int main()
 			    printf("\nLONG: M2 array is full\n");
 				//Implement replacement policy replaceLong();
 				int index = 0;
-				int * replace_blocks = replaceLong(&index);
+				int * replace_blocks = replaceLong(&index, tag);
 				// Update M1 and write to M2
 				for (int block = 0; block < 8; ++block)
 				{
@@ -872,7 +872,7 @@ int * findValidType(int *array_size)
 	return validtype;
 }
 
-int * replaceLong(int *index_to_evict)
+int * replaceLong(int *index_to_evict, int tag)
 {
 	int readline[16];
         int validtype_length;
@@ -932,14 +932,14 @@ int * replaceLong(int *index_to_evict)
 	{
 		for(int i=0; i < 8; i++)
 		{
-			M3word_write((validtype[*index_to_evict]+i)*BLOCK_OFFSET, smallest_tag);
+			M3word_write((validtype[*index_to_evict]+i)*BLOCK_OFFSET, tag);
 		}
 	}
 	else //(0x50 > validtype[index_to_evict] > 0x40), M2
 	{
 		for(int i=0; i < 8; i++)
 		{
-			M2word_write((validtype[*index_to_evict]+i)*M2BLOCK_OFFSET, smallest_tag);
+			M2word_write((validtype[*index_to_evict]+i)*M2BLOCK_OFFSET, tag);
 		}
 	}
 
