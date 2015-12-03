@@ -791,8 +791,11 @@ int * findValidType(int *array_size)
 		//Searching through M3 and M2
 		MemController.read(Row, readline);
 		type = (readline[15] << 1) + readline[14];
-		if (type == 0x3)
+		if (type == 0x2)
+		{
 			size++;
+			Row = Row + 7;
+		}
 	}
 
 	validtype = new int[size];
@@ -807,7 +810,7 @@ int * findValidType(int *array_size)
 		MemController.read(Row, readline);
 		type = (readline[15] << 1) + readline[14];
 
-		if(type == 0x3)
+		if(type == 0x2)
 		{
 			validtype[counter] = Row;
 			Row = Row + 7;
@@ -826,7 +829,7 @@ void replaceLong()
 
 	int tag_line[validtype_length];
 	int smallest_tag;
-	int row_to_evict;
+	int index_to_evict;
 
 	int data_to_satellite[64];
 
@@ -834,31 +837,34 @@ void replaceLong()
 	{
 		MemController.read(validtype[i], readline);
 
-		tag_line[i] = 	(readline[13] << 4) +
-				(readline[12] << 3) +
-				(readline[11] << 2) +
-				(readline[10] << 1) +
+		tag_line[i] = 	(readline[13] << 4) + \
+				(readline[12] << 3) + \
+				(readline[11] << 2) + \
+				(readline[10] << 1) + \
 				(readline[9]);
-		if (i = 0)
+		if (i == 0)
+		{
 			smallest_tag = tag_line[0];
+			index_to_evict = 0;
+		}
 		else
 		{
 			if (smallest_tag > tag_line[i])
 			{
 				smallest_tag = tag_line[i];
-				row_to_evict = i;
+				index_to_evict = i;
 			}
 		}
 	}
 
 	//Check whether we need to evict from M3 or M2
-	if (validtype[row_to_evict] < 0x64) //M3
+	if (validtype[index_to_evict] < 0x64) //M3
 	{
-		M3word_read(row_to_evict, data_to_satellite);
+		M3word_read(index_to_evict, data_to_satellite);
 	}
-	else //(0x80 > validtype[row_to_evict] > 0x64), M2
+	else //(0x80 > validtype[index_to_evict] > 0x64), M2
 	{
-		M2word_read(row_to_evict, data_to_satellite);
+		M2word_read(index_to_evict, data_to_satellite);
 	}
 
 	//Send data to satellite 2 bytes at a time at a speed of 1333333 clock cycles
