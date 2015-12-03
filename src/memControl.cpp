@@ -123,7 +123,7 @@ int main()
                                 int m1[16];
                                 M1generate(WORD, tag, NO_NEXT, m1);
                                 MemController.write(free_block, m1);
-                                M2word_write(free_block * M2BLOCK_OFFSET, 0xFEEB);
+                                M2word_write(free_block * M2BLOCK_OFFSET, tag);
                            		LATENCY_COUNTER += BYTE_ACCESS_128;
 
                         }
@@ -135,7 +135,7 @@ int main()
                         int m1[16];
                         M1generate(WORD, tag, NO_NEXT, m1);
                         MemController.write(free_block, m1);
-                        M3word_write(free_block * BLOCK_OFFSET, DATA);
+                        M3word_write(free_block * BLOCK_OFFSET, tag);
 						LATENCY_COUNTER += BYTE_ACCESS_128;
                     }
                 }
@@ -212,7 +212,7 @@ int main()
                             printf("\nQUAD: M2 array is full\n");
 			    //Implement replacement policy
 			}
-			
+
 			else
 			{
                             // Update M1 and write to M2
@@ -234,9 +234,9 @@ int main()
                                 //printf("\nnext: %d", next);
                                 M1generate(QUAD, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
-                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xCACA);
+                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, tag);
 								LATENCY_COUNTER += BYTE_ACCESS_128;
-                          
+
                             }
 			}
                     }
@@ -264,7 +264,7 @@ int main()
                             M1generate(QUAD, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
-                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x1111);
+                            M3word_write(free_blocks[block] * BLOCK_OFFSET, tag);
  							LATENCY_COUNTER += BYTE_ACCESS_128;
 
                         }
@@ -405,8 +405,8 @@ int main()
 					MemController.write(replace_blocks[index] + block, m1);
 				}
 			}
-			
-			else	
+
+			else
 			{
                             // Update M1 and write to M2
                             for (int block = 0; block < 8; ++block)
@@ -427,7 +427,7 @@ int main()
                                 //printf("\nnext: %d", next);
                                 M1generate(LONG, tag, next, m1);
                                 MemController.write(free_blocks[block], m1);
-                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, 0xDADA);
+                                M2word_write(((free_blocks[block]) - 64) * M2BLOCK_OFFSET, tag);
 								LATENCY_COUNTER += BYTE_ACCESS_128;
 
                             }
@@ -457,7 +457,7 @@ int main()
                             M1generate(LONG, tag, next, m1);
 
                             MemController.write(free_blocks[block], m1);
-                            M3word_write(free_blocks[block] * BLOCK_OFFSET, 0x2222);
+                            M3word_write(free_blocks[block] * BLOCK_OFFSET, tag);
 							LATENCY_COUNTER += BYTE_ACCESS_128;
 
                         }
@@ -478,7 +478,7 @@ int main()
             int *validarray = findValidLines(&validarray_length);
 
             tag_found = tagCompare(validarray, validarray_length, tag);
-            
+
             if(tag_found != -1)
             {
 				if(ts == WORD)
@@ -490,11 +490,11 @@ int main()
 				{
 					M3word_read(tag_found * 8, requestData);
 					LATENCY_COUNTER += BYTE_ACCESS_128;
-				
+
 					MemController.read(tag_found, validLine);
-					
+
 					int nextRow;
-					
+
 					do
 					{
 						nextRow = nextBitsToInt(validLine);
@@ -525,13 +525,13 @@ int main()
 		 			else if(ts == QUAD || ts == LONG)
 					{
 						M2word_read((tag_found - 64)* 16, requestData);
-						
+
 						LATENCY_COUNTER += BYTE_ACCESS_128;
 
 						MemController.read(tag_found, validLine);
-						
+
 						int nextRow;
-						
+
 						do
 						{
 							nextRow = nextBitsToInt(validLine);
@@ -555,7 +555,7 @@ int main()
             	}
 
  			}
-    			   		
+
     	}
     }
 
@@ -586,7 +586,7 @@ int tagCompare(int *check, int length, int tag)
 		{
 			tag_bit_array[4-bit] = tag & (1 << bit) ? 1 : 0;
 		}
-		
+
 		MemController.read(check[i], line);
 
 		if(tag_bit_array[0] == line[13] && \
